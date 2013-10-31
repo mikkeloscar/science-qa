@@ -1,3 +1,5 @@
 django
 south
+django-compressor # depends on lessc binary
 django-uuidfield
+django-bootstrap3

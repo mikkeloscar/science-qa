@@ -1,0 +1,24 @@
+{% load compress %}
+{% load bootstrap3 %}
+<!DOCTYPE html>
+<html lang="en"> <!-- TODO fix language var -->
+  <head>
+    <title>{% block title %}SCIENCE QA{% endblock %}</title>
+    {% bootstrap_css %}
+    {% compress css %}
+    <link type="text/less" rel="stylesheet" href="{{ STATIC_URL }}css/styles.less" />
+    {% block css %}
+    {% endblock %}
+    {% endcompress %}
+    <script type="text/javascript" charset="utf-8" src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+    {% compress js %}
+    {% block js %}
+    {% endblock %}
+    {% endcompress %}
+  </head>
+  <body>
+    <div id="content">
+      {% block content %}{% endblock %}
+    </div>
+  </body>
+</html>
