@@ -1,0 +1,42 @@
+{% extends "site_base.html" %}
+
+{% load i18n %}
+{% load apikey %}
+
+{% block content %}
+
+<a href="{% url 'api_key_add' %}" class="btn btn-primary">{% trans "Add API Key" %}</a>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>{% trans "Domain" %}</th>
+      <th>{% trans "API Key" %}</th>
+      <th>{% trans "Active" %}</th>
+      <th>{% trans "Added" %}</th>
+      <th>{% trans "Expire" %}</th>
+      <th>{% trans "Actions" %}</th>
+    </tr>
+  </thead>
+
+{% for key in keys %}
+<tr>
+  <td>{{ key.domain }}</td>
+  <td>{{ key.key }}</td>
+  <td>{{ key|is_active }}</td>
+  <td>{{ key.date_added }}</td>
+  <td>{{ key.date_expire }}</td>
+  <td>
+    <a href="{% url 'api_key_edit' key.id %}" class="btn btn-success btn-xs" role="button">
+      {% trans "Edit" %}
+    </a>
+    <a href="#" class="btn btn-danger btn-xs" role="button">
+      {% trans "Delete" %}
+    </a>
+  </td>
+</tr>
+{% endfor %}
+
+</table>
+
+{% endblock %}
