@@ -19,6 +19,8 @@ class Question(models.Model):
     class Meta:
         verbose_name = _('question')
         verbose_name_plural = _('questions')
+        # extend permissions created by django-admin
+        permissions = (("view_question", "Can view question"),)
 
     def question(self, lang):
         if lang == "en":
@@ -37,17 +39,20 @@ class Question(models.Model):
 
 
 class Category(models.Model):
-    name_da = models.CharField(_('category name da'), max_length=200,
+    name_da = models.CharField(_('Category name (da)'), max_length=200,
             blank=True)
-    name_en = models.CharField(_('category name en'), max_length=200,
+    name_en = models.CharField(_('Category name (en)'), max_length=200,
             blank=True)
-    category_id = models.CharField(_('category id'), max_length=200)
+    category_id = models.CharField(_('Category ID'), max_length=200,
+        help_text=_('The category ID used to refrence category in the url @ kunet.dk'))
     date_added = models.DateTimeField(_('date added'), auto_now_add=True)
     date_last_edit = models.DateTimeField(_('last edit'), auto_now=True)
 
     class Meta:
         verbose_name = _('category')
         verbose_name_plural = _('categories')
+        # extend permissions created by django-admin
+        permissions = (("view_category", "Can view category"),)
 
     def name(self, lang):
         if lang == "en":
@@ -60,15 +65,18 @@ class Category(models.Model):
 
 
 class Degree(models.Model):
-    name_da = models.CharField(_('degree name da'), max_length=200, blank=True)
-    name_en = models.CharField(_('degree name en'), max_length=200, blank=True)
-    degree_id = models.CharField(_('degree id'), max_length=200)
+    name_da = models.CharField(_('Degree name (da)'), max_length=200, blank=True)
+    name_en = models.CharField(_('Degree name (en)'), max_length=200, blank=True)
+    degree_id = models.CharField(_('Degree ID'), max_length=200,
+            help_text=_('The degree ID used to refrence degree in the url @ kunet.dk'))
     date_added = models.DateTimeField(_('date added'), auto_now_add=True)
     date_last_edit = models.DateTimeField(_('last edit'), auto_now=True)
 
     class Meta:
         verbose_name = _('degree')
         verbose_name_plural = _('degrees')
+        # extend permissions created by django-admin
+        permissions = (("view_degree", "Can view degree"),)
 
     def __unicode__(self):
         return self.name_da or self.name_en

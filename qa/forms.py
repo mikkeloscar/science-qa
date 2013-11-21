@@ -1,14 +1,19 @@
 from django import forms
 from django.utils.translation import ugettext as _
 
-from qa.models import Question
+from qa.models import Question, Category, Degree
 
-
-class QuestionForm(forms.ModelForm):
+class BootstrapForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(forms.ModelForm, self).__init__(*args, **kwargs)
         for field in self.fields:
             self.fields[field].widget.attrs['class'] = 'form-control'
+
+
+
+class QuestionForm(BootstrapForm):
+    def __init__(self, *args, **kwargs):
+        super(QuestionForm, self).__init__(*args, **kwargs)
         self.fields['answer_da'].widget.attrs['rows'] = 3
         self.fields['answer_en'].widget.attrs['rows'] = 3
 
@@ -55,3 +60,26 @@ class QuestionForm(forms.ModelForm):
         #             "question"))
 
         return cleaned_data
+
+
+class CategoryForm(BootstrapForm):
+
+    class Meta:
+        model = Category
+
+    def clean(self):
+        cleaned_data = super(CategoryForm, self).clean()
+        name_da = cleaned_data.get("name_da")
+        name_en = cleaned_data.get("name_en")
+
+        if not name_da and not name_en:
+            raise forms.ValidationError(_("Fill out at least one of the name "
+                "fields"))
+
+        return cleaned_data
+
+# Inherit from CategoryForm because they are very much alike
+class DegreeForm(CategoryForm):
+
+    class Meta:
+        model = Degree

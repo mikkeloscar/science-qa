@@ -36,12 +36,16 @@
   <td>{{ question.date_added }}</td>
   <td>{{ question.date_last_edit }}</td>
   <td>
+    {% if perms.qa.change_question %}
     <a href="{% url 'question_edit' question.uuid %}" class="btn btn-success btn-xs" role="button">
       {% trans "Edit" %}
     </a>
+    {% endif %}
+    {% if perms.qa.delete_question %}
     <a href="{% url 'question_delete' question.uuid %}" class="btn btn-danger btn-xs" role="button">
       {% trans "Delete" %}
     </a>
+    {% endif %}
   </td>
 </tr>
 

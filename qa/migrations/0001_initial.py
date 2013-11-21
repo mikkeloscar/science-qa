@@ -16,6 +16,8 @@ class Migration(SchemaMigration):
             ('answer_da', self.gf('django.db.models.fields.TextField')(blank=True)),
             ('question_en', self.gf('django.db.models.fields.CharField')(max_length=200, blank=True)),
             ('answer_en', self.gf('django.db.models.fields.TextField')(blank=True)),
+            ('date_added', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
+            ('date_last_edit', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
         ))
         db.send_create_signal(u'qa', ['Question'])
 
@@ -43,6 +45,8 @@ class Migration(SchemaMigration):
             ('name_da', self.gf('django.db.models.fields.CharField')(max_length=200, blank=True)),
             ('name_en', self.gf('django.db.models.fields.CharField')(max_length=200, blank=True)),
             ('category_id', self.gf('django.db.models.fields.CharField')(max_length=200)),
+            ('date_added', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
+            ('date_last_edit', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
         ))
         db.send_create_signal(u'qa', ['Category'])
 
@@ -52,6 +56,8 @@ class Migration(SchemaMigration):
             ('name_da', self.gf('django.db.models.fields.CharField')(max_length=200, blank=True)),
             ('name_en', self.gf('django.db.models.fields.CharField')(max_length=200, blank=True)),
             ('degree_id', self.gf('django.db.models.fields.CharField')(max_length=200)),
+            ('date_added', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
+            ('date_last_edit', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
         ))
         db.send_create_signal(u'qa', ['Degree'])
 
@@ -60,6 +66,7 @@ class Migration(SchemaMigration):
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('question', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['qa.Question'])),
             ('rating', self.gf('django.db.models.fields.BooleanField')(default=False)),
+            ('date_added', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
         ))
         db.send_create_signal(u'qa', ['Rating'])
 
@@ -88,12 +95,16 @@ class Migration(SchemaMigration):
         u'qa.category': {
             'Meta': {'object_name': 'Category'},
             'category_id': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
+            'date_added': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
+            'date_last_edit': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name_da': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'}),
             'name_en': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'})
         },
         u'qa.degree': {
             'Meta': {'object_name': 'Degree'},
+            'date_added': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
+            'date_last_edit': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
             'degree_id': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name_da': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'}),
@@ -104,6 +115,8 @@ class Migration(SchemaMigration):
             'answer_da': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'answer_en': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'categories': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cat+'", 'symmetrical': 'False', 'to': u"orm['qa.Category']"}),
+            'date_added': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
+            'date_last_edit': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
             'degrees': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'degree+'", 'symmetrical': 'False', 'to': u"orm['qa.Degree']"}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'question_da': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'}),
@@ -112,6 +125,7 @@ class Migration(SchemaMigration):
         },
         u'qa.rating': {
             'Meta': {'object_name': 'Rating'},
+            'date_added': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'question': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['qa.Question']"}),
             'rating': ('django.db.models.fields.BooleanField', [], {'default': 'False'})
