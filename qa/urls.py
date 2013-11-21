@@ -7,9 +7,9 @@ urlpatterns = patterns('',
 
     url(r'^questions/$', views.questions, name='questions'),
     url(r'^questions/add/$', views.question_add, name='question_add'),
-    url(r'^questions/edit/(?P<question_uuid>\d+)/$', views.question_edit,
+    url(r'^questions/edit/(?P<question_uuid>[a-f\d]+)/$', views.question_edit,
         name='question_edit'),
-    url(r'^questions/delete/(?P<question_uuid>\d+)/$', views.question_delete,
+    url(r'^questions/delete/(?P<question_uuid>[a-f\d]+)/$', views.question_delete,
         name='question_delete'),
 
     url(r'^categories/$', views.categories, name='categories'),

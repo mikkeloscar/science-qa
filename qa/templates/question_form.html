@@ -1,0 +1,65 @@
+{% extends "site_base.html" %}
+
+{% load i18n %}
+
+{% block content %}
+
+<h1>
+  {% if action == "add" %}
+  {% trans "Add question" %}
+  {% elif action == "edit" %}
+  {% trans "Edit question" %}
+  {% endif %}
+</h1>
+
+{# This is a mess, but the form is rather userfriendly #}
+
+<form role="form" action="{{ request.path }}" method="post">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <div class="form-col">
+    <h3>{% trans "Question in Danish" %}</h3>
+  <div class="form-group {% if form.question_da.errors %}has-error{% endif %}">
+    <label class="control-label" for="id_question_da">
+      {% trans "Question" %}
+    </label>
+    {{ form.question_da.errors }}
+    {{ form.question_da }}
+  </div>
+  <div class="form-group {% if form.answer_da.errors %}has-error{% endif %}">
+    <label class="control-label" for="id_answer_da">{% trans "Answer" %}</label>
+    {{ form.answer_da.errors }}
+    {{ form.answer_da }}
+  </div>
+</div><div class="vert-spacer"></div><div class="form-col">
+    <h3>{% trans "Question in English" %}</h3>
+  <div class="form-group {% if form.question_en.errors %}has-error{% endif %}">
+    <label class="control-label" for="id_question_en">{% trans "Question" %}</label>
+    {{ form.question_en.errors }}
+    {{ form.question_en }}
+  </div>
+  <div class="form-group {% if form.answer_en.errors %}has-error{% endif %}">
+    <label class="control-label" for="id_answer_en">{% trans "Answer" %}</label>
+    {{ form.answer_en.errors }}
+    {{ form.answer_en }}
+  </div>
+</div>
+  <div class="form-group {% if form.categories.errors %}has-error{% endif %}">
+    <label class="control-label" for="id_categories">{% trans "Categories" %}</label>
+    {{ form.categories.errors }}
+    {# <select multiple class="form-control" id="id_categories" name="categories" /> #}
+      <!-- TODO Fix dan/eng names -->
+      {{ form.categories }}
+      <span class="help-block">{{ form.categories.help_text }}</span>
+  </div>
+  <div class="form-group {% if form.degrees.errors %}has-error{% endif %}">
+    <label class="control-label" for="id_degrees">{% trans "Degrees" %}</label>
+    {{ form.degrees.errors }}
+      {{ form.degrees }}
+      <span class="help-block">{{ form.degrees.help_text }}</span>
+  </div>
+
+  <button type="submit" class="btn btn-success">{% trans "Save" %}</button>
+
+</form>
+{% endblock %}

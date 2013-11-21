@@ -1,12 +1,13 @@
 {% load compress %}
 {% load bootstrap3 %}
+{% load i18n %}
 <!DOCTYPE html>
-<html lang="en"> <!-- TODO fix language var -->
+<html lang="{{ LANGUAGE_CODE }}">
   <head>
-    <title>{% block title %}SCIENCE QA{% endblock %}</title>
+    <title>{% block title %}Science QA{% endblock %}</title>
     {% bootstrap_css %}
     {% compress css %}
-    <link type="text/less" rel="stylesheet" href="{{ STATIC_URL }}css/styles.less" />
+    <link type="text/less" rel="stylesheet" href="{{ STATIC_URL }}css/style.less" />
     {% block css %}
     {% endblock %}
     {% endcompress %}

@@ -1,7 +1,10 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, get_object_or_404
+from django.core.urlresolvers import reverse
 
-from .models import Question, Category, Degree
+from qa.models import Question, Category, Degree
+from qa.forms import QuestionForm
 
 
 def index(request):
@@ -10,15 +13,40 @@ def index(request):
 
 @login_required
 def questions(request):
-    pass
+    questions = Question.objects.all()
+    return render(request, 'questions.html', { 'questions': questions })
 
 @login_required
-def question_add(request, question_uuid):
-    pass
+def question_add(request):
+    if request.method == 'POST':
+        form = QuestionForm(request.POST)
+        if form.is_valid():
+            form.save()
+            # TODO use django message service
+            return HttpResponseRedirect(reverse('questions'))
+    else:
+        form = QuestionForm()
+
+    return render(request, 'question_form.html', { 'form': form, 
+                                                   'action': 'add' })
 
 @login_required
 def question_edit(request, question_uuid):
-    pass
+    q = None
+    if question_uuid:
+        q = get_object_or_404(Question, uuid=question_uuid)
+    if request.method == 'POST':
+        print(q)
+        form = QuestionForm(request.POST, instance=q)
+        if form.is_valid():
+            form.save()
+            # TODO use django message service
+            return HttpResponseRedirect(reverse('questions'))
+    else:
+        form = QuestionForm(instance=q)
+
+    return render(request, 'question_form.html', { 'form': form,
+                                                   'action': 'edit' })
 
 @login_required
 def question_delete(request, question_uuid):

@@ -1,0 +1,50 @@
+{% extends "site_base.html" %}
+
+{% load i18n %}
+
+{% block content %}
+
+<a href="{% url 'question_add' %}" class="btn btn-primary">{% trans "Add question" %}</a>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>{% trans "Question" %}</th>
+      {# <th>{% trans "Active" %}</th> #}
+      <th>{% trans "Added" %}</th>
+      <th>{% trans "Last edit" %}</th>
+      <th>{% trans "Actions" %}</th>
+    </tr>
+  </thead>
+{% for question in questions %}
+<tr>
+  <td>
+    <!-- TODO add ajax easy edit -->
+    {% if question.question_da and question.answer_da %}
+    <div class="question-answer">
+      <div class="question">{{ question.question_da }}</div>
+      <div class="answer">{{ question.answer_da }}</div>
+    </div>
+    {% endif %}
+    {% if question.question_en and question.answer_en %}
+    <div class="question-answer">
+      <div class="question">{{ question.question_en }}</div>
+      <div class="answer">{{ question.answer_en }}</div>
+    </div>
+    {% endif %}
+  </td>
+  <td>{{ question.date_added }}</td>
+  <td>{{ question.date_last_edit }}</td>
+  <td>
+    <a href="{% url 'question_edit' question.uuid %}" class="btn btn-success btn-xs" role="button">
+      {% trans "Edit" %}
+    </a>
+    <a href="{% url 'question_delete' question.uuid %}" class="btn btn-danger btn-xs" role="button">
+      {% trans "Delete" %}
+    </a>
+  </td>
+</tr>
+
+{% endfor %}
+</table>
+{% endblock %}
