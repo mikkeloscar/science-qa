@@ -3,3 +3,5 @@ south
 django-compressor # depends on lessc binary
 django-uuidfield
 django-bootstrap3
+# development
+django-debug-toolbar
