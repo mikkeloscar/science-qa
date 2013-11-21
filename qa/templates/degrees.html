@@ -1,0 +1,46 @@
+{% extends "site_base.html" %}
+
+{% load i18n %}
+
+{% block content %}
+
+<a href="{% url 'degree_add' %}" class="btn btn-primary">{% trans "Add Degree" %}</a>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>{% trans "Deree" %}</th>
+      <th>{% trans "Degree ID" %}</th>
+      {# <th>{% trans "Active" %}</th> #}
+      <th>{% trans "Added" %}</th>
+      <th>{% trans "Last edit" %}</th>
+      <th>{% trans "Actions" %}</th>
+    </tr>
+  </thead>
+{% for degree in degrees %}
+<tr>
+  <td>
+    {# TODO add ajax easy edit  #}
+    {{ degree.name_da }}
+    {{ degree.name_en }}
+  </td>
+  <td><code>{{ degree.degree_id }}</code></td>
+  <td>{{ degree.date_added }}</td>
+  <td>{{ degree.date_last_edit }}</td>
+  <td>
+    {% if perms.qa.change_degree %}
+    <a href="{% url 'degree_edit' degree.id %}" class="btn btn-success btn-xs" role="button">
+      {% trans "Edit" %}
+    </a>
+    {% endif %}
+    {% if perms.qa.delete_degree %}
+    <a href="{% url 'degree_delete' degree.id %}" class="btn btn-danger btn-xs deletelink" role="button">
+      {% trans "Delete" %}
+    </a>
+    {% endif %}
+  </td>
+</tr>
+
+{% endfor %}
+</table>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "site_base.html" %}
+
+{% load i18n %}
+
+{% block content %}
+
+<a href="{% url 'category_add' %}" class="btn btn-primary">{% trans "Add Category" %}</a>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>{% trans "Category" %}</th>
+      <th>{% trans "Category ID" %}</th>
+      {# <th>{% trans "Active" %}</th> #}
+      <th>{% trans "Added" %}</th>
+      <th>{% trans "Last edit" %}</th>
+      <th>{% trans "Actions" %}</th>
+    </tr>
+  </thead>
+{% for category in categories %}
+<tr>
+  <td>
+    {# TODO add ajax easy edit  #}
+    {{ category.name_da }}
+    {{ category.name_en }}
+  </td>
+  <td><code>{{ category.category_id }}</code></td>
+  <td>{{ category.date_added }}</td>
+  <td>{{ category.date_last_edit }}</td>
+  <td>
+    {% if perms.qa.change_categories %}
+    <a href="{% url 'category_edit' category.id %}" class="btn btn-success btn-xs" role="button">
+      {% trans "Edit" %}
+    </a>
+    {% endif %}
+    {% if perms.qa.delete_categories %}
+    <a href="{% url 'category_delete' category.id %}" class="btn btn-danger btn-xs deletelink" role="button">
+      {% trans "Delete" %}
+    </a>
+    {% endif %}
+  </td>
+</tr>
+
+{% endfor %}
+</table>
+{% endblock %}
