@@ -98,6 +98,7 @@ class Degree(models.Model):
 class Rating(models.Model):
     question = models.ForeignKey(Question, verbose_name=_('question'))
     rating = models.BooleanField(_('rating'))
+    ku_user = models.CharField(_('KU user'), max_length=6)
     date_added = models.DateTimeField(_('date added'), auto_now_add=True)
 
     class Meta:
@@ -106,3 +107,8 @@ class Rating(models.Model):
 
     def __unicode__(self):
         return self.rating
+
+    def clean(self):
+        pattern = r'^[b-df-hj-np-tv-z]{3}\d{3}$'
+        if len(self.ku_user) != 6 or not re.search(pattern, self.ku_user):
+            raise ValidationError(_('Not a valid KU-username'))

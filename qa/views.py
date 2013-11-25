@@ -3,6 +3,8 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.shortcuts import render, get_object_or_404
 from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext as _
+from django.core import serializers
+
 
 from qa.models import Question, Category, Degree
 from qa.forms import QuestionForm, CategoryForm, DegreeForm
@@ -11,10 +13,19 @@ from qa.forms import QuestionForm, CategoryForm, DegreeForm
 def index(request):
     return HttpResponse()
 
-
-@permission_required('qa.view_question')
+# @permission_required('qa.view_question')
 def questions(request):
-    questions = Question.objects.all()
+    q = request.GET.get('q')
+    if q:
+        questions = Question.objects.filter(question_da__icontains=q)
+        if request.is_ajax():
+            data = serializers.serialize("json", questions)
+            return HttpResponse(data, content_type="application/json")
+        else:
+            return render(request, 'questions.html', { 'questions': questions })
+    else:
+        questions = Question.objects.all()
+
     return render(request, 'questions.html', { 'questions': questions })
 
 @permission_required('qa.add_question')
