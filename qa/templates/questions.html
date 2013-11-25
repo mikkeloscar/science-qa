@@ -2,10 +2,24 @@
 
 {% load i18n %}
 
+{# Fix static files #}
+{% block js %}
+<script type="text/javascript" charset="utf-8" src="{{ STATIC_URL }}js/search.js"></script>
+{% endblock %}
+
+{% block nav-qa %} class="active"{% endblock %}
+
+{% block page-title %}{% trans "Questions" %}{% endblock %}
+
 {% block content %}
 
+<p>
 <a href="{% url 'question_add' %}" class="btn btn-primary">{% trans "Add question" %}</a>
+</p>
 
+<p>
+<input type="text" class="form-control filter" id="search" name="question" placeholder="{% trans "Filter.." %}" />
+</p>
 <table class="table table-striped">
   <thead>
     <tr>
@@ -16,6 +30,8 @@
       <th>{% trans "Actions" %}</th>
     </tr>
   </thead>
+<tbody id="ajax-response"></tbody>
+<tbody class="static">
 {% for question in questions %}
 <tr>
   <td>
@@ -48,7 +64,10 @@
     {% endif %}
   </td>
 </tr>
-
 {% endfor %}
+</tbody>
 </table>
+<script>
+Search.init();
+</script>
 {% endblock %}

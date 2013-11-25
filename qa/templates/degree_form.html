@@ -4,13 +4,13 @@
 
 {% block content %}
 
-<h1>
+{% block page-title %}
   {% if action == "add" %}
   {% trans "Add Degree" %}
   {% elif action == "edit" %}
   {% trans "Edit Degree" %}
   {% endif %}
-</h1>
+{% endblock %}
 
 <form role="form" action="{{ request.path }}" method="post">
   {% csrf_token %}

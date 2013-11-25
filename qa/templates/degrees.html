@@ -2,6 +2,10 @@
 
 {% load i18n %}
 
+{% block nav-deg %} class="active"{% endblock %}
+
+{% block page-title %}{% trans "Degrees" %}{% endblock %}
+
 {% block content %}
 
 <a href="{% url 'degree_add' %}" class="btn btn-primary">{% trans "Add Degree" %}</a>

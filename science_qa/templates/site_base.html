@@ -12,13 +12,33 @@
     {% endblock %}
     {% endcompress %}
     <script type="text/javascript" charset="utf-8" src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
-    {% compress js %}
+    {# {% compress js %} #}
     {% block js %}
     {% endblock %}
-    {% endcompress %}
+    {# {% endcompress %} #}
   </head>
   <body>
+    {# {% include "menu.html" %} #}
+    <div class="header">
+      <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+        <a class="navbar-brand">Science QA - Administration</a>
+        {% block nav %}
+        <ul class="nav navbar-nav">
+          <li{% block nav-qa %}{% endblock %}>
+            <a href="{% url 'questions' %}">{% trans "Questions" %}</a>
+          </li>
+          <li{% block nav-cat %}{% endblock %}>
+            <a href="{% url 'categories' %}">{% trans "Categories" %}</a>
+          </li>
+          <li{% block nav-deg %}{% endblock %}>
+            <a href="{% url 'degrees' %}">{% trans "Degrees" %}</a>
+          </li>
+        </ul>
+        {% endblock %}
+      </div>
+    </div>
     <div id="content">
+      <h1 class="page-title">{% block page-title %}{% endblock %}</h1>
       {% block content %}{% endblock %}
     </div>
   </body>

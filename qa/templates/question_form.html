@@ -4,13 +4,14 @@
 
 {% block content %}
 
-<h1>
+{% block page-title %}
   {% if action == "add" %}
   {% trans "Add question" %}
   {% elif action == "edit" %}
   {% trans "Edit question" %}
   {% endif %}
-</h1>
+{% endblock %}
+
 
 {# This is a mess, but the form is rather userfriendly #}
 

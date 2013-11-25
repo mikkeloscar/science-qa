@@ -2,6 +2,10 @@
 
 {% load i18n %}
 
+{% block nav-cat %} class="active"{% endblock %}
+
+{% block page-title %}{% trans "Categories" %}{% endblock %}
+
 {% block content %}
 
 <a href="{% url 'category_add' %}" class="btn btn-primary">{% trans "Add Category" %}</a>
