@@ -43,7 +43,9 @@ class Category(models.Model):
             blank=True)
     name_en = models.CharField(_('Category name (en)'), max_length=200,
             blank=True)
-    category_id = models.CharField(_('Category ID'), max_length=200,
+    category_id_da = models.CharField(_('Category ID (da)'), max_length=200,
+        help_text=_('The category ID used to refrence category in the url @ kunet.dk'))
+    category_id_en = models.CharField(_('Category ID (en)'), max_length=200,
         help_text=_('The category ID used to refrence category in the url @ kunet.dk'))
     date_added = models.DateTimeField(_('date added'), auto_now_add=True)
     date_last_edit = models.DateTimeField(_('last edit'), auto_now=True)

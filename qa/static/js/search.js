@@ -20,7 +20,10 @@ var Search = {
       $.ajax({
         url: window.location.pathname + "?q=" + val,
         dataType: 'json',
-      }).success(function (data) {
+        // headers: { //'X-CSRFToken':getCookie('csrftoken'),
+        //           'sessionid':getCookie('sessionid') },
+      }).done(function (data) {
+        console.log(data);
         if (data.length) {
           $('#ajax-response').html('');
 

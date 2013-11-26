@@ -23,10 +23,15 @@
     <label class="control-label" for="id_name_en">{{ form.name_en.label }}</label>
   {{ form.name_en }}
   </div>
-  <div class="form-group {% if form.category_id.errors %}has-error{% endif %}">
-    <label class="control-label" for="id_category_id">{{ form.category_id.label }}</label>
-  {{ form.category_id }}
-      <span class="help-block">{{ form.category_id.help_text }}</span>
+  <div class="form-group {% if form.category_id_da.errors %}has-error{% endif %}">
+    <label class="control-label" for="id_category_id_da">{{ form.category_id_da.label }}</label>
+  {{ form.category_id_da }}
+      <span class="help-block">{{ form.category_id_da.help_text }}</span>
+  </div>
+  <div class="form-group {% if form.category_id_en.errors %}has-error{% endif %}">
+    <label class="control-label" for="id_category_id_en">{{ form.category_id_en.label }}</label>
+  {{ form.category_id_en }}
+      <span class="help-block">{{ form.category_id_en.help_text }}</span>
   </div>
 
   <button type="submit" class="btn btn-success">{% trans "Save" %}</button>

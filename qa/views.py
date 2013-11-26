@@ -13,7 +13,7 @@ from qa.forms import QuestionForm, CategoryForm, DegreeForm
 def index(request):
     return HttpResponse()
 
-# @permission_required('qa.view_question')
+@permission_required('qa.view_question')
 def questions(request):
     q = request.GET.get('q')
     if q:
@@ -21,8 +21,6 @@ def questions(request):
         if request.is_ajax():
             data = serializers.serialize("json", questions)
             return HttpResponse(data, content_type="application/json")
-        else:
-            return render(request, 'questions.html', { 'questions': questions })
     else:
         questions = Question.objects.all()
 
