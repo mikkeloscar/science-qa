@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext_noop as __
 
 from uuidfield import UUIDField
 
@@ -10,9 +11,10 @@ class Question(models.Model):
     question_en = models.CharField(_('question en'), max_length=200, blank=True)
     answer_en = models.TextField(_('answer en'), blank=True)
     categories = models.ManyToManyField('Category', related_name="cat+",
-            verbose_name=_('categories'))
+            verbose_name=_('Categories'))
     degrees = models.ManyToManyField('Degree', related_name="degree+",
-            verbose_name=_('degrees'))
+            verbose_name=_('Degrees'))
+    # degree_all = models.BooleanField(_('All degrees'))
     date_added = models.DateTimeField(_('date added'), auto_now_add=True)
     date_last_edit = models.DateTimeField(_('last edit'), auto_now=True)
 
@@ -37,6 +39,12 @@ class Question(models.Model):
     def __unicode__(self):
         return self.question_da or self.question_en
 
+    # def save(self, *args, **kwargs):
+    #     if self.degree_all:
+    #         # TODO add all degrees
+    #         pass
+    #     super(Question, self).save(*args, **kwargs)
+
 
 class Category(models.Model):
     name_da = models.CharField(_('Category name (da)'), max_length=200,
@@ -44,9 +52,9 @@ class Category(models.Model):
     name_en = models.CharField(_('Category name (en)'), max_length=200,
             blank=True)
     category_id_da = models.CharField(_('Category ID (da)'), max_length=200,
-        help_text=_('The category ID used to refrence category in the url @ kunet.dk'))
+        help_text=_('The category ID is used to refrence category in the url @ kunet.dk'))
     category_id_en = models.CharField(_('Category ID (en)'), max_length=200,
-        help_text=_('The category ID used to refrence category in the url @ kunet.dk'))
+        help_text=_('The category ID is used to refrence category in the url @ kunet.dk'))
     date_added = models.DateTimeField(_('date added'), auto_now_add=True)
     date_last_edit = models.DateTimeField(_('last edit'), auto_now=True)
 
@@ -67,12 +75,22 @@ class Category(models.Model):
 
 
 class Degree(models.Model):
+    BACH = 'bsc'
+    MASTER = 'msc'
+    LEVEL_CHOICES = (
+        (BACH, __('Bsc')),
+        (MASTER, __('Msc'))
+    )
     name_da = models.CharField(_('Degree name (da)'), max_length=200, blank=True)
     name_en = models.CharField(_('Degree name (en)'), max_length=200, blank=True)
-    degree_id = models.CharField(_('Degree ID'), max_length=200,
-            help_text=_('The degree ID used to refrence degree in the url @ kunet.dk'))
+    degree_id_da = models.CharField(_('Degree ID (da)'), max_length=200,
+            help_text=_('The degree ID is used to refrence degree in the url @ kunet.dk'))
+    degree_id_en = models.CharField(_('Degree ID (en)'), max_length=200,
+            help_text=_('The degree ID is used to refrence degree in the url @ '
+                + 'kunet.dk'), blank=True)
     date_added = models.DateTimeField(_('date added'), auto_now_add=True)
     date_last_edit = models.DateTimeField(_('last edit'), auto_now=True)
+    level = models.CharField(max_length=3, choices=LEVEL_CHOICES, default=BACH)
 
     class Meta:
         verbose_name = _('degree')

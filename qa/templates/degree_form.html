@@ -23,10 +23,20 @@
     <label class="control-label" for="id_name_en">{{ form.name_en.label }}</label>
   {{ form.name_en }}
   </div>
-  <div class="form-group {% if form.degree_id.errors %}has-error{% endif %}">
-    <label class="control-label" for="id_degree_id">{{ form.degree_id.label }}</label>
-  {{ form.degree_id }}
-      <span class="help-block">{{ form.degree_id.help_text }}</span>
+  <div class="form-group {% if form.degree_id_da.errors %}has-error{% endif %}">
+    <label class="control-label" for="id_degree_id_da">{{ form.degree_id_da.label }}</label>
+  {{ form.degree_id_da }}
+      <span class="help-block">{{ form.degree_id_da.help_text }}</span>
+  </div>
+  <div class="form-group {% if form.degree_id_en.errors %}has-error{% endif %}">
+    <label class="control-label" for="id_degree_id_en">{{ form.degree_id_en.label }}</label>
+  {{ form.degree_id_en }}
+      <span class="help-block">{{ form.degree_id_en.help_text }}</span>
+  </div>
+  <div class="form-group {% if form.level.errors %}has-error{% endif %}">
+    <label class="control-label" for="id_level">{{ form.level.label }}</label>
+  {{ form.level }}
+      <span class="help-block">{{ form.level.help_text }}</span>
   </div>
 
   <button type="submit" class="btn btn-success">{% trans "Save" %}</button>

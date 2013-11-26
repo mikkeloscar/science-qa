@@ -16,6 +16,7 @@
       <th>{% trans "Deree" %}</th>
       <th>{% trans "Degree ID" %}</th>
       {# <th>{% trans "Active" %}</th> #}
+      <th>{% trans "Level" %}</th>
       <th>{% trans "Added" %}</th>
       <th>{% trans "Last edit" %}</th>
       <th>{% trans "Actions" %}</th>
@@ -28,7 +29,8 @@
     {{ degree.name_da }}
     {{ degree.name_en }}
   </td>
-  <td><code>{{ degree.degree_id }}</code></td>
+  <td><code>{{ degree.degree_id_da }}</code> <code>{{ degree.degree_id_en }}</code></td>
+  <td><code>{{ degree.get_level_display }}</code></td>
   <td>{{ degree.date_added }}</td>
   <td>{{ degree.date_last_edit }}</td>
   <td>
