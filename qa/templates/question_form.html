@@ -80,7 +80,7 @@
 </form>
 
 <script>
-{{ form.degrees.field.queryset|degrees_to_js|safe }}
+{{ form.degrees.field.queryset.all|degrees_to_js }}
 
 QuestionForm.init(degrees);
 </script>
