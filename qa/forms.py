@@ -16,6 +16,8 @@ class QuestionForm(BootstrapForm):
         super(QuestionForm, self).__init__(*args, **kwargs)
         self.fields['answer_da'].widget.attrs['rows'] = 3
         self.fields['answer_en'].widget.attrs['rows'] = 3
+        self.fields['degree_all_bsc'].widget.attrs['class'] = None
+        self.fields['degree_all_msc'].widget.attrs['class'] = None
 
     class Meta:
         model = Question

@@ -1,6 +1,11 @@
 {% extends "site_base.html" %}
 
 {% load i18n %}
+{% load qa %}
+
+{% block js %}
+<script type="text/javascript" charset="utf-8" src="{{ STATIC_URL }}js/question.js"></script>
+{% endblock %}
 
 {% block content %}
 
@@ -13,9 +18,7 @@
 {% endblock %}
 
 
-{# This is a mess, but the form is rather userfriendly #}
-
-<form role="form" action="{{ request.path }}" method="post">
+<form role="form" action="{{ request.path }}" method="post" role="form">
   {% csrf_token %}
   {{ form.non_field_errors }}
   <div class="form-col">
@@ -46,21 +49,39 @@
   </div>
 </div>
   <div class="form-group {% if form.categories.errors %}has-error{% endif %}">
-    <label class="control-label" for="id_categories">{% trans "Categories" %}</label>
+    <label class="control-label" for="id_categories">{{ form.categories.label }}</label>
     {{ form.categories.errors }}
     {# <select multiple class="form-control" id="id_categories" name="categories" /> #}
       <!-- TODO Fix dan/eng names -->
       {{ form.categories }}
+      {# <a href="{% url 'category_add' %}">{% trans "Add new category" %}</a> #}
       <span class="help-block">{{ form.categories.help_text }}</span>
   </div>
   <div class="form-group {% if form.degrees.errors %}has-error{% endif %}">
-    <label class="control-label" for="id_degrees">{% trans "Degrees" %}</label>
+    <label class="control-label" for="id_degrees">{{ form.degrees.label }}</label>
     {{ form.degrees.errors }}
       {{ form.degrees }}
+      {# <a href="{% url 'degree_add' %}">{% trans "Add new degree" %}</a> #}
+      <div class="checkbox">
+        <label>
+          {{ form.degree_all_bsc }} {{ form.degree_all_bsc.label }}
+        </label>
+      </div>
+      <div class="checkbox">
+        <label>
+          {{ form.degree_all_msc }} {{ form.degree_all_msc.label }}
+        </label>
+      </div>
       <span class="help-block">{{ form.degrees.help_text }}</span>
   </div>
 
   <button type="submit" class="btn btn-success">{% trans "Save" %}</button>
 
 </form>
+
+<script>
+{{ form.degrees.field.queryset|degrees_to_js|safe }}
+
+QuestionForm.init(degrees);
+</script>
 {% endblock %}
