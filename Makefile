@@ -9,19 +9,19 @@ deploy: migrate static
 
 deps:
 	# install new deps
-	$(VIRTUALENV)pip install -r deps.txt
+	$(VIRTUALENV)/bin/pip install -r deps.txt
 
 migrate:
 	# migrate db if needed
-	$(VIRTUALENV)python manage.py migrate
+	$(VIRTUALENV)/bin/python manage.py migrate
 
 static: compress
 	# collect staticfiles
-	echo yes | $(VIRTUALENV)python manage.py collectstatic
+	echo yes | $(VIRTUALENV)/bin/python manage.py collectstatic
 
 compress:
 	# compress css/js
-	$(VIRTUALENV)python manage.py compress
+	$(VIRTUALENV)/bin/python manage.py compress
 
 
 clean:
