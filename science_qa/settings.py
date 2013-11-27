@@ -5,7 +5,7 @@ import sys
 
 from ConfigParser import ConfigParser
 
-DJANGO_ENV = os.environ['DJANGO_ENV']
+DJANGO_ENV = os.environ.get('DJANGO_ENV')
 
 if DJANGO_ENV == "production":
     DEBUG = False
