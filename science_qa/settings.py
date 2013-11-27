@@ -32,7 +32,6 @@ config = {
 if DJANGO_ENV == "production":
     try:
         CONFIG_FILE = '/etc/django/qa_science.conf'
-        CONFIG_FILE = '/home/moscar/qa_science.conf'
         config_parser = ConfigParser()
         config_parser.read(CONFIG_FILE)
         config['db']['name'] = config_parser.get('db', 'name')
