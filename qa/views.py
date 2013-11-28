@@ -33,7 +33,10 @@ def question_add(request):
         if form.is_valid():
             form.save()
             # TODO use django message service
-            return HttpResponseRedirect(reverse('questions'))
+            if '_addanother' in request.POST:
+                form = QuestionForm()
+            else:
+                return HttpResponseRedirect(reverse('questions'))
     else:
         form = QuestionForm()
 
@@ -50,7 +53,10 @@ def question_edit(request, question_uuid):
         if form.is_valid():
             form.save()
             # TODO use django message service
-            return HttpResponseRedirect(reverse('questions'))
+            if '_addanother' in request.POST:
+                return HttpResponseRedirect(reverse('question_add'))
+            else:
+                return HttpResponseRedirect(reverse('questions'))
     else:
         form = QuestionForm(instance=q)
 
@@ -86,7 +92,10 @@ def category_add(request):
             form.save()
             # TODO use django message service
             # TODO handle redirects in popup mode
-            return HttpResponseRedirect(reverse('categories'))
+            if '_addanother' in request.POST:
+                form = CategoryForm()
+            else:
+                return HttpResponseRedirect(reverse('categories'))
     else:
         form = CategoryForm()
 
@@ -104,7 +113,10 @@ def category_edit(request, category_id):
             form.save()
             # TODO use django message service
             # TODO handle redirects in popup mode
-            return HttpResponseRedirect(reverse('categories'))
+            if '_addanother' in request.POST:
+                return HttpResponseRedirect(reverse('category_add'))
+            else:
+                return HttpResponseRedirect(reverse('categories'))
     else:
         form = CategoryForm(instance=c)
 
@@ -140,7 +152,10 @@ def degree_add(request):
             form.save()
             # TODO use django message service
             # TODO handle redirects in popup mode
-            return HttpResponseRedirect(reverse('degrees'))
+            if '_addanother' in request.POST:
+                form = DegreeForm()
+            else:
+                return HttpResponseRedirect(reverse('degrees'))
     else:
         form = DegreeForm()
 
@@ -158,7 +173,10 @@ def degree_edit(request, degree_id):
             form.save()
             # TODO use django message service
             # TODO handle redirects in popup mode
-            return HttpResponseRedirect(reverse('degrees'))
+            if '_addanother' in request.POST:
+                return HttpResponseRedirect(reverse('degree_add'))
+            else:
+                return HttpResponseRedirect(reverse('degrees'))
     else:
         form = DegreeForm(instance=d)
 
