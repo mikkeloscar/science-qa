@@ -5,7 +5,7 @@ STATIC=science_qa/static_serve
 
 all: help
 
-deploy: deps migrate static
+deploy: clean deps migrate static
 
 deps:
 	# install new deps
