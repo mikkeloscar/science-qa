@@ -220,6 +220,10 @@ COMPRESS_PRECOMPILERS = (
 COMPRESS_ENABLED = not DEBUG
 COMPRESS_OFFLINE = not DEBUG
 
+# LOGIN URL
+LOGIN_URL = '/login/'
+LOGOUT_URL = '/logout/'
+
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
 
 # A sample logging configuration. The only tangible logging

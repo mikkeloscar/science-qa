@@ -35,6 +35,10 @@
           </li>
         </ul>
         {% endblock %}
+        {% if user.is_authenticated %}
+        <p class="navbar-text navbar-right">{% trans "Logged in as" %} <b>{{ user.username }}</b>.
+        <a href="{% url 'django.contrib.auth.views.logout' %}">{% trans "Logout" %}</a>
+        {% endif %}
       </div>
     </div>
     <div id="content">
