@@ -21,5 +21,6 @@ urlpatterns = patterns('',
     url(r'^apikey/', include('api_key_manager.urls')),
     url(r'^login/', 'django.contrib.auth.views.login', {
         'template_name': 'login.html' }),
-    url(r'^logout/', 'django.contrib.auth.views.logout'),
+    url(r'^logout/', 'django.contrib.auth.views.logout', {
+        'template_name': 'logout.html' }),
 )
