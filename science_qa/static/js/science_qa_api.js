@@ -14,8 +14,9 @@ function QASearchException( message ) {
 
     // defaults
     var defaults = {
-      api_key: null,
-      type: 'search', // can be either 'search' (default) or 'contact'
+      // API key for intranet.ku.dk
+      api_key: 'addcdcfcd5164664a083fa9e4d137c0f',
+      type: 'search', // can be either 'search' (default), 'list' or 'contact'
       degree: null,
       categories: [],
       locale: null,
@@ -29,6 +30,8 @@ function QASearchException( message ) {
       contactBodyPlaceHolder_en: 'Message',
       contactSubmitText_da: 'Send',
       contactSubmitText_en: 'Send',
+      listTitle_da: 'Ofte stillede spørgsmål',
+      listTitle_en: 'Frequently asked questions',
       locale_id: '#ctl00_PlaceHolderGlobalNavigation_LanguageLink',
       user_menu_id: '#zz2_ID_PersonalInformation',
       user_sharepoint_link: '/_layouts/userdisp.aspx?Force=True&ID=',
@@ -37,7 +40,7 @@ function QASearchException( message ) {
       username_re: /[b-df-hj-np-tv-z]{3}\d{3}/i,
       degree_re: /^[a-z_]+(ba|ma)$/i,
       category_re: /^[a-z]+$/,
-      backend: 'http://',
+      backend: 'http://qa.moscar.net/api/',
     };
 
     // settings
@@ -251,6 +254,28 @@ function QASearchException( message ) {
     }
 
     /**
+     * Setup List UI
+     */
+    function setupList() {
+      var wrapper = $('<div class="js-qa-list"></div>');
+      if (settings.locale == 'en') {
+        var title = settings.listTitle_en;
+      } else {
+        var title = settings.listTitle_da;
+      }
+      var header = $('<div class="js-qa-header">' + title + '</div>');
+      var results = $('<div class="js-qa-results"></div>');
+
+      // combine
+      wrapper.append(header);
+      wrapper.append(results);
+      // append to page
+      $(self).append(wrapper);
+
+      // populate results
+    }
+
+    /**
      * Show alumnimail or inputfield
      */
     function showUserMail(username) {
@@ -264,7 +289,7 @@ function QASearchException( message ) {
     /**
      * Setup either search UI or contactform UI depending on settings.type
      *
-     * Valid types are 'search' and 'contact'
+     * Valid types are 'search', 'contact' and 'list'
      *
      * throws "Invalid type" on invalid type
      */
@@ -275,6 +300,9 @@ function QASearchException( message ) {
       } else if (settings.type === 'contact') {
         // setup contact UI
         setupContact();
+      } else if (settings.type === 'list') {
+        // setup list UI
+        setupList();
       } else {
         throw new QASearchException("Invalid type");
       }

@@ -201,5 +201,8 @@ def degree_delete(request, degree_id):
 
 # API
 
-def search(request):
+def search(request, apikey=None):
+    pass
+
+def rate(request, apikey=None):
     pass
