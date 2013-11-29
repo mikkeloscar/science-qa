@@ -207,10 +207,10 @@ INSTALLED_APPS = (
     # apps
     'qa',
     'api_key_manager',
-
-    # development
-    'debug_toolbar',
 )
+
+if DEBUG:
+    INSTALLED_APPS += ( 'debug_toolbar', )
 
 # django-compress
 COMPRESS_PRECOMPILERS = (
