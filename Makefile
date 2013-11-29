@@ -1,6 +1,6 @@
 
 DJANGO_ENV=debug
-VIRTUALENV=
+VIRTUALENV_BIN=
 STATIC=science_qa/static_serve
 
 all: help
@@ -9,19 +9,19 @@ deploy: clean deps migrate static
 
 deps:
 	# install new deps
-	$(VIRTUALENV)/bin/pip install -r deps.txt
+	$(VIRTUALENV_BIN)pip install -r deps.txt
 
 migrate:
 	# migrate db if needed
-	$(VIRTUALENV)/bin/python manage.py migrate
+	$(VIRTUALENV_BIN)python manage.py migrate
 
 static: compress
 	# collect staticfiles
-	echo yes | $(VIRTUALENV)/bin/python manage.py collectstatic
+	echo yes | $(VIRTUALENV_BIN)python manage.py collectstatic
 
 compress:
 	# compress css/js
-	$(VIRTUALENV)/bin/python manage.py compress
+	$(VIRTUALENV_BIN)python manage.py compress
 
 
 clean:
