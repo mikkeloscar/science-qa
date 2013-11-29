@@ -49,10 +49,10 @@ class Category(models.Model):
             blank=True)
     category_id_da = models.CharField(_('Category ID (da)'), max_length=200,
         help_text=_('The category ID is used to refrence category in the url @'
-                    + ' kunet.dk'))
+                    + ' kunet.dk'), blank=True)
     category_id_en = models.CharField(_('Category ID (en)'), max_length=200,
         help_text=_('The category ID is used to refrence category in the url @'
-                    + ' kunet.dk'))
+                    + ' kunet.dk'), blank=True)
     date_added = models.DateTimeField(_('date added'), auto_now_add=True)
     date_last_edit = models.DateTimeField(_('last edit'), auto_now=True)
 
