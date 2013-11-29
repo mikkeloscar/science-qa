@@ -1,5 +1,8 @@
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
+from django.utils.timezone import utc
+
+import datetime
 
 from uuidfield import UUIDField
 
@@ -8,7 +11,8 @@ class APIKey(models.Model):
     domain = models.CharField(_('domain'), max_length=200)
     active = models.BooleanField(_('active'))
     date_added = models.DateTimeField(_('date added'), auto_now_add=True)
-    date_expire = models.DateTimeField(_('expire date'))
+    date_expire = models.DateTimeField(_('expire date'), blank=True, null=True)
+    never_expire = models.BooleanField(_('never expire'))
 
     class Meta:
         verbose_name = _('API key')
@@ -17,5 +21,16 @@ class APIKey(models.Model):
     def __unicode__(self):
         return self.domain
 
-    def valid(self, request):
-        return True
+    def expire(self):
+        if self.never_expire:
+            return _('Never')
+        else:
+            return self.date_expire
+
+    def valid(self, referere):
+        # TODO properly handle referere
+        now = datetime.datetime.utcnow().replace(tzinfo=utc)
+        if referere == domain and active:
+            if never_expire or date_expire > now:
+                return True
+        return False
