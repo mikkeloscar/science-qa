@@ -40,7 +40,7 @@ function QASearchException( message ) {
       username_re: /[b-df-hj-np-tv-z]{3}\d{3}/i,
       degree_re: /^[a-z_]+(ba|ma)$/i,
       category_re: /^[a-z]+$/,
-      backend: 'http://qa.moscar.net/api/',
+      backend: 'http://qa.moscar.net/',
     };
 
     // settings
@@ -123,6 +123,7 @@ function QASearchException( message ) {
      * Sets up search UI
      */
     function setupSearch() {
+      var superWrapper = $('<div class="js-qa" />');
       var wrapper = $('<div class="js-qa-search"></div>');
       if (settings.locale == 'en') {
         var placeHolder = settings.searchPlaceHolder_en;
@@ -138,8 +139,10 @@ function QASearchException( message ) {
       wrapper.append(header);
       wrapper.append(input);
       wrapper.append(results);
+      superWrapper.append(wrapper);
+
       // append to page
-      $(self).append(wrapper);
+      $(self).append(superWrapper);
 
       // setup binds for search form
       $('#js-qa-search').on('input', function(e) {
@@ -152,6 +155,7 @@ function QASearchException( message ) {
      * Sets up contact form UI
      */
     function setupContact() {
+      var superWrapper = $('<div class="js-qa" />');
       var wrapper = $('<div class="js-qa-contact-form"></div>');
       if (settings.locale == 'en') {
         var titlePlaceHolder = settings.contactTitlePlaceHolder_en;
@@ -164,14 +168,17 @@ function QASearchException( message ) {
         var submitText = settings.contactSubmitText_da;
         var emailPlaceHolder = settings.emailPlaceHolder_da;
       }
+
+      var header = $('<div class="js-qa-header">Contact</div>');
+
       var form = $('<form id="js-qa-contact-form"></form>');
-      var email = $('<input id="js-qa-email" type="text" placeholder="'
-                    + emailPlaceHolder + '" disabled="disabled" />');
-      var subject = $('<input type="text" id="js-qa-contact-subject"'
-                    + ' placeholder="' + titlePlaceHolder + '" />');
+      var email = $('<div><input id="js-qa-email" type="text" placeholder="'
+                    + emailPlaceHolder + '" disabled="disabled" /></div>');
+      var subject = $('<div><input type="text" id="js-qa-contact-subject"'
+                    + ' placeholder="' + titlePlaceHolder + '" /></div>');
       var results = $('<div class="js-qa-results"></div>');
-      var body = $('<textarea id="js-qa-contact-message" placeholder="'
-                    + bodyPlaceHolder + '"></textarea>');
+      var body = $('<div><textarea id="js-qa-contact-message" placeholder="'
+                    + bodyPlaceHolder + '" rows="7"></textarea></div>');
       var submit = $('<button type="submit">' + submitText + '</button>');
 
       // append to form
@@ -182,9 +189,12 @@ function QASearchException( message ) {
       form.append(submit);
 
       // append form to wrapper
+      wrapper.append(header);
       wrapper.append(form);
+      superWrapper.append(wrapper);
+
       // append to page
-      $(self).append(wrapper);
+      $(self).append(superWrapper);
 
       // find user name and show alumni-mail for current user
       findUsername(showUserMail, showUserMail);
@@ -257,6 +267,7 @@ function QASearchException( message ) {
      * Setup List UI
      */
     function setupList() {
+      var superWrapper = $('<div class="js-qa" />');
       var wrapper = $('<div class="js-qa-list"></div>');
       if (settings.locale == 'en') {
         var title = settings.listTitle_en;
@@ -269,8 +280,10 @@ function QASearchException( message ) {
       // combine
       wrapper.append(header);
       wrapper.append(results);
+      superWrapper.append(wrapper);
+
       // append to page
-      $(self).append(wrapper);
+      $(self).append(superWrapper);
 
       // populate results
     }
@@ -294,6 +307,9 @@ function QASearchException( message ) {
      * throws "Invalid type" on invalid type
      */
     function setupUI() {
+      // setup css
+      setupCss();
+
       if (settings.type === 'search') {
         // setup search UI
         setupSearch();
@@ -305,6 +321,24 @@ function QASearchException( message ) {
         setupList();
       } else {
         throw new QASearchException("Invalid type");
+      }
+    }
+
+    /**
+     * Load in custom CSS
+     */
+    function setupCss() {
+      var cssId = 'qa-css';
+      var css_elem = $('#' + cssId);
+      if (css_elem.length == 0) {
+        var head = $('head');
+        var link = $('<link/>');
+        link.attr('id', cssId);
+        link.attr('type', 'text/css');
+        link.attr('href', settings.backend + 'static/css/qa_science_api.css');
+        link.attr('rel', 'stylesheet');
+        link.attr('media', 'screen');
+        head.append(link);
       }
     }
 
@@ -343,7 +377,7 @@ function QASearchException( message ) {
      */
     function makeAPIRequest(api_call, data, callback) {
       $.ajax({
-        url: settings.backend + api_call,
+        url: settings.backend + 'api/' + api_call,
         data: data,
         dataType: 'json',
       }).done(function (response) {
