@@ -202,7 +202,7 @@ def degree_delete(request, degree_id):
 # API
 
 def search(request, apikey=None):
-    pass
+    return HttpResponse("test\n");
 
 def rate(request, apikey=None):
     pass
