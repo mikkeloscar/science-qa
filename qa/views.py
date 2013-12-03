@@ -5,6 +5,8 @@ from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext as _
 from django.core import serializers
 
+from django.db.models import Q
+
 import json
 
 from qa.models import Question, Category, Degree
@@ -206,6 +208,8 @@ def search(request, apikey=None):
     response = {'call': 'search'}
     if valid_api_key(apikey, request):
         query = request.GET.get('q', None)
+        if query:
+            query = query.split(' ')
         categories = request.GET.get('categories', None)
         if categories:
             categories = categories.split('-')
@@ -218,8 +222,10 @@ def search(request, apikey=None):
 
         if locale == 'da':
             if query:
-                q = Question.objects.filter(question_da__icontains=query)
-                q = q.filter(answer_da__icontains=query)
+                q = Question.objects.all()
+                for _q in query:
+                    q = q.filter(Q(question_da__icontains=_q) |
+                            Q(answer_da__icontains=_q))
 
                 if categories:
                     c = q.filter(categories__category_id_da__in=categories).distinct()
@@ -230,9 +236,10 @@ def search(request, apikey=None):
                 # q = sortedQuery(list(q) + list(c) + list(d))
 
         elif locale == 'en':
-            if query:
-                q = Question.objects.filter(question_en__icontains=query)
-                q = q.filter(answer_en__icontains=query)
+                q = Question.objects.all()
+                for _q in query:
+                    q = q.filter(Q(question_en__icontains=_q) |
+                            Q(answer_en__icontains=_q))
 
                 if categories:
                     c = q.filter(categories__category_id_en__in=categories).distinct()
