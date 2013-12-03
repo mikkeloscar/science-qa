@@ -5,6 +5,7 @@ from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext as _
 from django.core import serializers
 
+import json
 
 from qa.models import Question, Category, Degree
 from qa.forms import QuestionForm, CategoryForm, DegreeForm
@@ -202,7 +203,108 @@ def degree_delete(request, degree_id):
 # API
 
 def search(request, apikey=None):
-    return HttpResponse("test\n");
+    response = {'call': 'search'}
+    if valid_api_key(apikey, request):
+        query = request.GET.get('q', None)
+        categories = request.GET.get('categories', None)
+        if categories:
+            categories = categories.split('-')
+        degree = request.GET.get('degree', None)
+        locale = request.GET.get('locale', None)
+
+        q = []
+        c = None
+        d = None
+
+        if locale == 'da':
+            if query:
+                q = Question.objects.filter(question_da__icontains=query)
+                q = q.filter(answer_da__icontains=query)
+
+                if categories:
+                    c = q.filter(categories__category_id_da__in=categories).distinct()
+
+                if degree:
+                    d = q.filter(degrees__degree_id_da=degree).distinct()
+
+                # q = sortedQuery(list(q) + list(c) + list(d))
+
+        elif locale == 'en':
+            if query:
+                q = Question.objects.filter(question_en__icontains=query)
+                q = q.filter(answer_en__icontains=query)
+
+                if categories:
+                    c = q.filter(categories__category_id_en__in=categories).distinct()
+
+                if degree:
+                    d = q.filter(degrees__degree_id_en=degree).distinct()
+        else:
+            response['error'] = 'Invalid locale'
+
+        print(q)
+        results = []
+        for qa in q:
+            results.append(qa.localeDict(locale))
+
+        response['results'] = results
+    else:
+        response['error'] = 'Invalid API Key'
+    return HttpResponse(json.dumps(response), content_type="application/json")
+
+
+def list_qa(request, apikey=None):
+    response = { 'call': 'list' }
+    if valid_api_key(apikey, request):
+        categories = request.GET.get('categories', None)
+        if categories:
+            categories = categories.split('-')
+        degree = request.GET.get('degree', None)
+        locale = request.GET.get('locale', None)
+
+        q = []
+        c = None
+        d = None
+
+        if locale == 'da':
+            if categories or degree:
+                q = Question.objects.all()
+                if categories:
+                    q = q.filter(categories__category_id_da__in=categories).distinct()
+
+                if degree:
+                    q = q.filter(degrees__degree_id_da=degree).distinct()
+        elif locale == 'en':
+            if categories or degree:
+                q = Question.objects.all()
+                if categories:
+                    q = q.filter(categories__category_id_en__in=categories).distinct()
+
+                if degree:
+                    q = q.filter(degrees__degree_id_en=degree).distinct()
+        else:
+            response['error'] = 'Invalid locale'
+
+        results = []
+        for qa in q:
+            results.append(qa.localeDict(locale))
+
+        response['results'] = results
+    else:
+        response['error'] = 'Invalid API Key'
+    return HttpResponse(json.dumps(response), content_type='application/json')
+
 
 def rate(request, apikey=None):
     pass
+
+def valid_api_key(apikey, request):
+    # TODO handle refere and APIKEY
+    referer = request.META.get('HTTP_REFERER', None)
+    if apikey:
+        return True
+    else:
+        return False
+
+# def sortedQuery(list):
+#     for arg in args:

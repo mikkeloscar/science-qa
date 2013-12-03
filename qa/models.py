@@ -38,6 +38,15 @@ class Question(models.Model):
         else:
             return self.answer_da or self.answer_en
 
+    def localeDict(self, lang):
+        LANGS = ['da', 'en']
+        if lang in LANGS:
+            result = { 'question': self.question(lang),
+                       'answer': self.answer(lang) }
+            return result
+        else:
+            return None
+
     def __unicode__(self):
         return self.question_da or self.question_en
 

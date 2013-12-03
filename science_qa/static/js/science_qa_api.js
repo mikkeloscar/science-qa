@@ -34,13 +34,15 @@ function QASearchException( message ) {
       listTitle_en: 'Frequently asked questions',
       locale_id: '#ctl00_PlaceHolderGlobalNavigation_LanguageLink',
       user_menu_id: '#zz2_ID_PersonalInformation',
-      user_sharepoint_link: '/_layouts/userdisp.aspx?Force=True&ID=',
-      user_id_re: /^var _spUserId=\{5};$/,
-      get_user_id_re: /\d{5}/g,
+      user_sp_link_re: /\\[\\a-z\d_.=?]+/i,
+      user_id_re: /^var _spUserId=\d+;$/,
+      get_user_id_re: /\d+/g,
       username_re: /[b-df-hj-np-tv-z]{3}\d{3}/i,
+      alumni_mail: '@alumni.ku.dk',
       degree_re: /^[a-z_]+(ba|ma)$/i,
       category_re: /^[a-z]+$/,
-      backend: 'http://qa.moscar.net/',
+      backend: 'https://qa.moscar.net/',
+      result: null,
     };
 
     // settings
@@ -135,6 +137,12 @@ function QASearchException( message ) {
                     + placeHolder + '" />');
       var results = $('<div class="js-qa-results"></div>');
 
+      var result = $('<div class="js-qa-result">' +
+                      '<div class="js-qa-result-title"></div>' +
+                      '<div class="js-qa-result-body"></div></div>');
+
+      settings.result = result;
+
       // combine
       wrapper.append(header);
       wrapper.append(input);
@@ -148,6 +156,11 @@ function QASearchException( message ) {
       $('#js-qa-search').on('input', function(e) {
         // do stuff
         console.log($(this).val());
+        var search = $(this).val();
+
+        if (search.length > 2) {
+          searchAPI($(this).val());
+        }
       });
     }
 
@@ -213,17 +226,21 @@ function QASearchException( message ) {
       // var menu = $(settings.user_menu_id);
       // var onClick = menu.attr('onMenuClick');
       // parse link
-      if (getSharepointUserID() != null) {
-        var link = settings.user_sharepoint_link + getSharepointUserID();
+
+      var userId = getSharepointUserID();
+      var userLink = getSharepointUserLink();
+
+      if (userId !== null && userLink !== null) {
+        var link = userLink + userId;
 
         $.ajax({
           url: link,
         }).done(function (data) {
           // parse user page and get KU-username
-          data = data.trim();
+          var html = data.trim();
           var emails = [];
-          $(data).find('a[href^="mailto:"]').each( function() {
-            emails.push(this.contentText);
+          $(html).find('a[href^="mailto:"]').each( function() {
+            emails.push($(this).html());
           });
 
           var username = null;
@@ -231,11 +248,11 @@ function QASearchException( message ) {
           for (var i = 0; i < emails.length; i++) {
             var kuUsername = emails[i].split('@');
             if(settings.username_re.test(kuUsername[0])) {
-              username = kuUsername;
+              username = kuUsername[0];
               break;
             }
           }
-          if (username != null) {
+          if (username !== null) {
             // Pass username to the callback
             done_callback(username);
           } else {
@@ -253,14 +270,53 @@ function QASearchException( message ) {
      * Find sharepoint userId on KUnet
      */
     function getSharepointUserID() {
+      var userId = null;
       $(document).find('script').filter(function () {
         if (settings.user_id_re.test(this.textContent)) {
-          var userID = this.textContent.match(settings.get_user_id_re);
-          return userID;
+          var userID = this.textContent.match(settings.get_user_id_re)[0];
+          userId = userID;
+          return false;
         }
       });
 
-      return null;
+      return userId;
+    }
+
+    function getSharepointUserLink() {
+      var link = null;
+      var js_link = $(settings.user_menu_id).attr('onmenuclick');
+
+      if (typeof js_link !== "undefined") {
+        var result = js_link.match(settings.user_sp_link_re);
+        link = result[0];
+      }
+
+      if (link !== null) {
+        link = parseURI(link);
+      }
+
+      return link;
+    }
+
+    /**
+     * Parse sharepoint URI and replace utf-8 chars with chars
+     */
+    function parseURI(uri) {
+      var new_uri = uri;
+
+      var replace = [
+        { orig: /\\u002f/g, new: "/" },
+        { orig: /\\u0026/g, new: "&" },
+        { orig: /\\u00252d/g, new: "-" },
+        { orig: /\\u00257d/g, new: "%7d" },
+        { orig: /\\u00257b/g, new: "%7b" }
+      ];
+
+      for (var i = 0; i < replace.length; i++) {
+        new_uri = new_uri.replace(replace[i].orig, replace[i].new);
+      }
+
+      return new_uri;
     }
 
     /**
@@ -275,7 +331,7 @@ function QASearchException( message ) {
         var title = settings.listTitle_da;
       }
       var header = $('<div class="js-qa-header">' + title + '</div>');
-      var results = $('<div class="js-qa-results"></div>');
+      var results = $('<div class="js-qa-results-list"></div>');
 
       // combine
       wrapper.append(header);
@@ -286,6 +342,7 @@ function QASearchException( message ) {
       $(self).append(superWrapper);
 
       // populate results
+      listAPI();
     }
 
     /**
@@ -309,6 +366,11 @@ function QASearchException( message ) {
     function setupUI() {
       // setup css
       setupCss();
+
+      var tpl = '<div class="js-qa-qa"><div class="js-qa-question">' +
+                  '</div><div class="js-qa-answer"></div></div>';
+
+      settings.result_tpl = tpl;
 
       if (settings.type === 'search') {
         // setup search UI
@@ -347,42 +409,100 @@ function QASearchException( message ) {
      */
     function buildSearchRequestURI( search ) {
       // format: /api/search/?q=search+term&degree=degree_ba&category_1=
+      var uri = {}
       if (search) {
-        var uri = { q: search };
-
-        if (settings.degree) {
-          uri['degree'] = settings.degree;
-        }
-
-        if (settings.categories.length > 0) {
-          // TODO is this possible with GET and jQuery?
-          uri['categories'] = settings.categories;
-          // for (var i = 0; i < settings.categories.length; i++) {
-          //   uri['category_'+i] = settings.categories[i];
-          // }
-        }
-
-        if (settings.locale) {
-          uri['locale'] = settings.locale;
-        }
-
-        return uri;
+        uri['q'] = search;
       }
 
-      return null;
+      if (settings.degree) {
+        uri['degree'] = settings.degree;
+      }
+
+      if (settings.categories.length > 0) {
+        uri['categories'] = settings.categories.join('-');
+      }
+
+      if (settings.locale) {
+        uri['locale'] = settings.locale;
+      }
+
+      return uri;
     }
 
     /**
      * make API Request
      */
-    function makeAPIRequest(api_call, data, callback) {
+    function makeAPIRequest( api_call, data, callback ) {
+      var url = settings.backend + 'api/' + api_call + '/' +
+                settings.api_key + '/';
+
+      console.log(url);
+
       $.ajax({
-        url: settings.backend + 'api/' + api_call,
+        url: url,
         data: data,
         dataType: 'json',
       }).done(function (response) {
         callback(response);
+      }).fail(function (data, textStatus, errorThrown) {
+        console.log("FAIL");
+        console.log(data);
+        console.log(textStatus);
+        console.log(errorThrown);
       });
     }
+
+    /**
+     * Search
+     */
+    function searchAPI( search ) {
+      var params = buildSearchRequestURI(search);
+
+      makeAPIRequest('search', params, APIResponse);
+    }
+
+    /**
+     * list
+     */
+    function listAPI() {
+      var params = buildSearchRequestURI(null);
+
+      makeAPIRequest('list', params, APIResponse);
+    }
+
+    /**
+     * Handle API Response
+     *
+     * @param response, assume response to be javascript obj
+     */
+    function APIResponse( response ) {
+      console.log(response);
+
+      switch (response['call']) {
+        case 'list':
+          populateList(response);
+          break;
+        case 'search':
+          populateSearch(reponse);
+          break;
+        default:
+          console.log(reponse);
+      }
+    }
+
+    function populateList( response ) {
+      var res = $('.js-qa-results-list');
+      if ('error' in response) {
+        console.log(response['error']);
+      } else {
+        for (var i = 0; i < response['results'].length; i++) {
+          var res_tpl = $(settings.result_tpl);
+          res_tpl.find('.js-qa-question').append(response['results'][i]['question']);
+          res_tpl.find('.js-qa-answer').append(response['results'][i]['answer']);
+          res.append(res_tpl);
+        }
+      }
+    }
+
   };
 })( jQuery );
