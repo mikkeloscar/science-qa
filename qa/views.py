@@ -7,10 +7,12 @@ from django.core import serializers
 
 from django.db.models import Q
 
+from urlparse import urlparse
 import json
 
 from qa.models import Question, Category, Degree
 from qa.forms import QuestionForm, CategoryForm, DegreeForm
+from api_key_manager.models import APIKey
 
 
 def index(request):
@@ -306,10 +308,17 @@ def rate(request, apikey=None):
     pass
 
 def valid_api_key(apikey, request):
-    # TODO handle refere and APIKEY
+    """ Checks if an API key is valid.
+    The API Key is provided by the cleint in a HTTP request, and is looked up
+    in the db to check if HTTP_REFERER and API Key domain matches.
+
+    """
     referer = request.META.get('HTTP_REFERER', None)
-    if apikey:
-        return True
+    if apikey and referer:
+        uri = urlparse(referer)
+        key = APIKey.objects.get(key=apikey)
+        if key and key.domain == uri.netloc:
+            return True
     else:
         return False
 
