@@ -1,14 +1,14 @@
 /**
- * QASearch exception
+ * QAScience exception
  */
-function QASearchException( message ) {
+function QAScienceException( message ) {
   this.message = message;
-  this.name = "QASearchException";
+  this.name = "QAScienceException";
 }
 
 (function ( $ ) {
   // qaSearch definition
-  $.fn.qaSearch = function( options ) {
+  $.fn.qaScience = function( options ) {
 
     var self = this;
 
@@ -16,7 +16,7 @@ function QASearchException( message ) {
     var defaults = {
       // API key for intranet.ku.dk
       api_key: 'addcdcfcd5164664a083fa9e4d137c0f',
-      type: 'search', // can be either 'search' (default), 'list' or 'contact'
+      type: 'search', // can be either 'search' (default), 'list', 'contact' or 'single'
       degree: null,
       categories: [],
       locale: null,
@@ -30,8 +30,12 @@ function QASearchException( message ) {
       contactBodyPlaceHolder_en: 'Message',
       contactSubmitText_da: 'Send',
       contactSubmitText_en: 'Send',
+      contactQFound_da: 'Maaske kan du finde svaret paa dit spørgsmaal her',
+      contactQFound_en: 'You may be able to find the answer to your question here',
       listTitle_da: 'Ofte stillede spørgsmål',
       listTitle_en: 'Frequently asked questions',
+      ratingText_da: 'Hjalp dette svar?',
+      ratingText_en: 'Was this answer helpful?',
       locale_id: '#ctl00_PlaceHolderGlobalNavigation_LanguageLink',
       user_menu_id: '#zz2_ID_PersonalInformation',
       user_sp_link_re: /\\[\\a-z\d_.=?]+/i,
@@ -39,10 +43,10 @@ function QASearchException( message ) {
       get_user_id_re: /\d+/g,
       username_re: /[b-df-hj-np-tv-z]{3}\d{3}/i,
       alumni_mail: '@alumni.ku.dk',
+      username: null,
       degree_re: /^[a-z_]+(ba|ma)$/i,
       category_re: /^[a-z]+$/,
       backend: 'https://qa.moscar.net/',
-      result: null,
     };
 
     // settings
@@ -57,6 +61,9 @@ function QASearchException( message ) {
     // parse page url
     parsePageURL();
 
+    // get KU username from cookie
+    getKUUsername();
+
     // setup UI
     setupUI();
 
@@ -70,7 +77,7 @@ function QASearchException( message ) {
      */
     function checkForAPIKey() {
       if (!settings.api_key) {
-        throw new QASearchException("API Key not set");
+        throw new QAScienceException("API Key not set");
       }
     }
 
@@ -86,6 +93,35 @@ function QASearchException( message ) {
           settings.locale = 'da';
         }
       }
+    }
+
+    /**
+     * try to get KU-username from cookie
+     *
+     * format logondata = acc=0&lgn=bcd123
+     */
+    function getKUUsername() {
+      var data = readCookie('logondata');
+
+      if (data) {
+        var username = data.match(settings.username_re);
+        settings.username = username[0];
+      }
+    }
+
+    /**
+     * Read cookie value
+     */
+    function readCookie(name) {
+      var nameEQ = name + "=";
+      var ca = document.cookie.split(';');
+      for (var i = 0; i < ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) == 0)
+          return c.substring(nameEQ.length, c.length);
+      }
+      return null;
     }
 
     /**
@@ -117,7 +153,7 @@ function QASearchException( message ) {
           }
         }
       } else {
-        throw new QASearchException("Not on kunet.dk");
+        throw new QAScienceException("Not on kunet.dk");
       }
     }
 
@@ -135,13 +171,8 @@ function QASearchException( message ) {
       var header = $('<div class="js-qa-header">Søg</div>');
       var input = $('<input type="text" id="js-qa-search" placeholder="'
                     + placeHolder + '" />');
-      var results = $('<div class="js-qa-results"></div>');
-
-      var result = $('<div class="js-qa-result">' +
-                      '<div class="js-qa-result-title"></div>' +
-                      '<div class="js-qa-result-body"></div></div>');
-
-      settings.result = result;
+      var results = $('<div id="js-qa-results-search" class="js-qa-results">'
+                    + '</div>');
 
       // combine
       wrapper.append(header);
@@ -155,11 +186,13 @@ function QASearchException( message ) {
       // setup binds for search form
       $('#js-qa-search').on('input', function(e) {
         // do stuff
-        console.log($(this).val());
         var search = $(this).val();
 
         if (search.length > 2) {
           searchAPI($(this).val());
+        } else if( search.length == 0 ) {
+          $('#js-qa-results-search .js-qa-qa').remove();
+          // $('#js-qa-results-search').parent().removeClass('js-qa-results-found');
         }
       });
     }
@@ -175,11 +208,13 @@ function QASearchException( message ) {
         var bodyPlaceHolder = settings.contactBodyPlaceHolder_en;
         var submitText = settings.contactSubmitText_en;
         var emailPlaceHolder = settings.emailPlaceHolder_en;
+        var qFound = settings.contactQFound_en;
       } else {
         var titlePlaceHolder = settings.contactTitlePlaceHolder_da;
         var bodyPlaceHolder = settings.contactBodyPlaceHolder_da;
         var submitText = settings.contactSubmitText_da;
         var emailPlaceHolder = settings.emailPlaceHolder_da;
+        var qFound = settings.contactQFound_da;
       }
 
       var header = $('<div class="js-qa-header">Contact</div>');
@@ -189,7 +224,10 @@ function QASearchException( message ) {
                     + emailPlaceHolder + '" disabled="disabled" /></div>');
       var subject = $('<div><input type="text" id="js-qa-contact-subject"'
                     + ' placeholder="' + titlePlaceHolder + '" /></div>');
-      var results = $('<div class="js-qa-results"></div>');
+      var results = $('<div class="js-qa-results-wrap">'
+                    + '<div class="js-qa-results-title">' + qFound + '</div>'
+                    + '<ul id="js-qa-results-contact" class="js-qa-results">'
+                    + '</ul></div>');
       var body = $('<div><textarea id="js-qa-contact-message" placeholder="'
                     + bodyPlaceHolder + '" rows="7"></textarea></div>');
       var submit = $('<button type="submit">' + submitText + '</button>');
@@ -212,6 +250,37 @@ function QASearchException( message ) {
       // find user name and show alumni-mail for current user
       findUsername(showUserMail, showUserMail);
 
+      // setup binds for contact form
+      $('#js-qa-contact-subject').on('input', contactSearch);
+
+      $('#js-qa-contact-message').on('input', contactSearch);
+
+      $('#js-qa-results-contact').on('click', '.js-qa-question', function () {
+        // e.preventDefault();
+        var qa = $(this).parent();
+        if (qa.hasClass('noanswer')) {
+          qa.removeClass('noanswer');
+        } else {
+          qa.addClass('noanswer');
+        }
+      });
+    }
+
+    /**
+     * contact search
+     *
+     * make search based on contact subject and contact message
+     */
+    function contactSearch() {
+      var subject = $('#js-qa-contact-subject').val();
+      var message = $('#js-qa-contact-message').val();
+
+      if (subject.length > 2 || message.length > 2) {
+        contactSearchAPI(subject + ' ' + message);
+      } else if( subject.length == 0 && message.length == 0) {
+          $('#js-qa-results-contact .js-qa-qa').remove();
+          $('#js-qa-results-contact').parent().removeClass('js-qa-results-found');
+      }
     }
 
     /**
@@ -331,7 +400,8 @@ function QASearchException( message ) {
         var title = settings.listTitle_da;
       }
       var header = $('<div class="js-qa-header">' + title + '</div>');
-      var results = $('<div class="js-qa-results-list"></div>');
+      var results = $('<ul id="js-qa-results-list" class="js-qa-results">'
+                    + '</ul>');
 
       // combine
       wrapper.append(header);
@@ -343,6 +413,37 @@ function QASearchException( message ) {
 
       // populate results
       listAPI();
+    }
+
+    /**
+     * Setup single UI
+     *
+     * Shows a single question based on URI
+     */
+    function setupSingle() {
+      var q_id = 'js-qa-question';
+      var superWrapper = $('<div class="js-qa" />');
+      var results = $('<div class="js-qa-single" id="' + q_id +'"></div>');
+
+      // combine
+      superWrapper.append(results);
+
+      // append to page
+      $(self).append(superWrapper);
+
+      // parse URI and show question if id present
+      var query = location.search.substring(1);
+      var vars = query.split('&');
+      var id = null;
+      for (var i = 0; i < vars.length; i++) {
+        var pair = vars[i].split('=');
+        if (pair[0] === 'qa-id') {
+          id = pair[1];
+          break;
+        }
+      }
+
+      singleAPI(id);
     }
 
     /**
@@ -367,8 +468,52 @@ function QASearchException( message ) {
       // setup css
       setupCss();
 
-      var tpl = '<div class="js-qa-qa"><div class="js-qa-question">' +
-                  '</div><div class="js-qa-answer"></div></div>';
+      if (settings.locale == 'en') {
+        var rating_text = settings.ratingText_en;
+        var rating_yes = 'Yes';
+        var rating_no = 'No';
+        var rating_thanks = 'Thank you';
+      } else {
+        var rating_text = settings.ratingText_da;
+        var rating_yes = 'Ja';
+        var rating_no = 'Nej';
+        var rating_thanks = 'Tak';
+      }
+
+      var tpl = '<li class="js-qa-qa"><a href="#" class="js-qa-question">'
+              + '</a><div class="js-qa-answer"></div>'
+              + '<div class="js-qa-rating">' + rating_text
+              + '<span class="js-qa-rate"><a href="1">' + rating_yes
+              + '</a> / <a href="-1">' + rating_no + '</a></span></div></li>';
+
+      // disable rating link behaviuor
+      $(self).on('click', '.js-qa-rate > a', function (e) {
+        e.preventDefault();
+        var href = $(this).attr('href');
+        var parent = $(this).parent().parent().parent();
+        var id = parent.attr('id');
+
+        var rating = parseInt(href);
+
+        // rate question
+        rateAPI(rating, id);
+
+        var rate_elem = $(this).parent().parent();
+        rate_elem.hide();
+        rate_elem.html(rating_thanks);
+        rate_elem.fadeIn();
+
+        return false;
+      });
+
+      // disable default link behaviuour
+      $(self).on('click', '.js-qa-question', function (e) {
+        e.preventDefault();
+        if ($(this).attr('href') !== "#") {
+          history.pushState(null, null, $(this).attr('href'));
+        }
+        return false;
+      });
 
       settings.result_tpl = tpl;
 
@@ -381,8 +526,11 @@ function QASearchException( message ) {
       } else if (settings.type === 'list') {
         // setup list UI
         setupList();
+      } else if (settings.type === 'single') {
+        // setup single UI
+        setupSingle();
       } else {
-        throw new QASearchException("Invalid type");
+        throw new QAScienceException("Invalid type");
       }
     }
 
@@ -426,29 +574,58 @@ function QASearchException( message ) {
         uri['locale'] = settings.locale;
       }
 
+      if (settings.username) {
+        uri['ku_user'] = settings.username;
+      }
+
       return uri;
     }
 
     /**
      * make API Request
      */
-    function makeAPIRequest( api_call, data, callback ) {
+    function makeAPIRequest( api_call, data, callback, type) {
       var url = settings.backend + 'api/' + api_call + '/' +
                 settings.api_key + '/';
-
-      console.log(url);
 
       $.ajax({
         url: url,
         data: data,
         dataType: 'json',
       }).done(function (response) {
-        callback(response);
+        if (typeof type !== "udefined") {
+          callback(response, type);
+        } else {
+          callback(response);
+        }
       }).fail(function (data, textStatus, errorThrown) {
         console.log("FAIL");
         console.log(data);
         console.log(textStatus);
         console.log(errorThrown);
+      });
+    }
+
+    /**
+     * make API Post Request
+     *
+     * Callback is optional
+     */
+    function makeAPIPostRequest( api_call, data, callback ) {
+      var url = settings.backend + 'api/' + api_call + '/' +
+                settings.api_key + '/';
+
+      $.ajax({
+        url: url,
+        type: 'POST',
+        data: data,
+        dataType: 'json',
+      }).done(function (response) {
+        if (typeof callback !== "undefined") {
+          callback(response);
+        }
+      }).fail( function (data) {
+        console.log(data);
       });
     }
 
@@ -462,6 +639,17 @@ function QASearchException( message ) {
     }
 
     /**
+     * search contact
+     */
+    function contactSearchAPI( search ) {
+      var params = buildSearchRequestURI(search);
+
+      console.log(params);
+
+      makeAPIRequest('search', params, APIResponse, 'contact')
+    }
+
+    /**
      * list
      */
     function listAPI() {
@@ -471,38 +659,116 @@ function QASearchException( message ) {
     }
 
     /**
+     * rate
+     */
+    function rateAPI(value, id) {
+      var params = null;
+
+      if (settings.username) {
+        params = { rating: value,
+                   ku_user: settings.username,
+                   id: id }
+      }
+
+      makeAPIPostRequest('rate', params);
+    }
+
+    /**
+     * single
+     */
+    function singleAPI(id) {
+      if (typeof id !== "undefined") {
+        var params = { id: id, locale: settings.locale };
+
+        makeAPIRequest('single', params, APIResponse);
+      }
+    }
+
+    /**
      * Handle API Response
      *
      * @param response, assume response to be javascript obj
      */
-    function APIResponse( response ) {
+    function APIResponse( response, type ) {
       console.log(response);
 
       switch (response['call']) {
         case 'list':
-          populateList(response);
+          populateResult(response, '#js-qa-results-list');
           break;
         case 'search':
-          populateSearch(reponse);
+          if (type === 'contact') {
+            populateResult(response, '#js-qa-results-contact', true);
+          } else {
+            populateResult(response, '#js-qa-results-search');
+          }
+          break;
+        case 'single':
+          addSingleQuestion(response, '#js-qa-question');
           break;
         default:
-          console.log(reponse);
+          console.log(response);
       }
     }
 
-    function populateList( response ) {
-      var res = $('.js-qa-results-list');
+    /**
+     * populate results div
+     */
+    function populateResult( response, result, noanswer) {
+      $(result + ' .js-qa-qa').remove();
+
+      var res = $(result);
+      res.parent().removeClass('js-qa-results-found');
+
       if ('error' in response) {
         console.log(response['error']);
       } else {
-        for (var i = 0; i < response['results'].length; i++) {
-          var res_tpl = $(settings.result_tpl);
-          res_tpl.find('.js-qa-question').append(response['results'][i]['question']);
-          res_tpl.find('.js-qa-answer').append(response['results'][i]['answer']);
-          res.append(res_tpl);
+        if (response['results'].length > 0) {
+          res.parent().addClass('js-qa-results-found');
+          for (var i = 0; i < response['results'].length; i++) {
+            var res_tpl = $(settings.result_tpl);
+
+            var url = '?qa-id=' + response['results'][i]['id'];
+
+            res_tpl.attr('id', response['results'][i]['id']);
+            res_tpl.find('.js-qa-question')
+                   .append(response['results'][i]['question']);
+            res_tpl.find('.js-qa-question').attr('href', url);
+            res_tpl.find('.js-qa-answer')
+                   .append(response['results'][i]['answer']);
+            if (noanswer) {
+              res_tpl.addClass('noanswer');
+            }
+
+            if ('ratings' in response &&
+                $.inArray(response['results'][i]['id'],
+                          response['ratings']) > -1) {
+              res_tpl.addClass('hasvoted');
+            }
+            res.append(res_tpl);
+          }
         }
       }
     }
 
+    /**
+     * add single question
+     */
+    function addSingleQuestion( response, q_id ) {
+      var res = $(q_id);
+
+      if ('error' in response) {
+        console.log(response['error']);
+      } else if (response['question'] != null) {
+        var res_tpl = $(settings.result_tpl);
+        res_tpl.attr('id', response['question']['id']);
+        res_tpl.find('.js-qa-question')
+               .append(response['question']['question']);
+        res_tpl.find('.js-qa-answer')
+               .append(response['question']['answer']);
+
+        res.append(res_tpl);
+      }
+    }
   };
 })( jQuery );

@@ -34,31 +34,19 @@
 <tbody class="static">
 {% for question in questions %}
 <tr>
-  <td>
-    <!-- TODO add ajax easy edit -->
-    {% if question.question_da and question.answer_da %}
-    <div class="question-answer">
-      <div class="question">{{ question.question_da }}</div>
-      <div class="answer">{{ question.answer_da }}</div>
-    </div>
-    {% endif %}
-    {% if question.question_en and question.answer_en %}
-    <div class="question-answer">
-      <div class="question">{{ question.question_en }}</div>
-      <div class="answer">{{ question.answer_en }}</div>
-    </div>
-    {% endif %}
+  <td class="qa-row">
+    {% include "question.html" with question=question %}
   </td>
   <td>{{ question.date_added }}</td>
   <td>{{ question.date_last_edit }}</td>
   <td>
     {% if perms.qa.change_question %}
-    <a href="{% url 'question_edit' question.uuid %}" class="btn btn-success btn-xs" role="button">
+    <a href="{% url 'question_edit' question.id %}" class="btn btn-success btn-xs" role="button">
       {% trans "Edit" %}
     </a>
     {% endif %}
     {% if perms.qa.delete_question %}
-    <a href="{% url 'question_delete' question.uuid %}" class="btn btn-danger btn-xs" role="button">
+    <a href="{% url 'question_delete' question.id %}" class="btn btn-danger btn-xs" role="button">
       {% trans "Delete" %}
     </a>
     {% endif %}
@@ -67,7 +55,45 @@
 {% endfor %}
 </tbody>
 </table>
+
+<ul class="pagination">
+  <li{% if not questions.has_previous %} class="disabled"{% endif %}>
+  {% if questions.has_previous %}
+    <a href="?page={{ questions.previous_page_number }}">&laquo;</a>
+  {% else %}
+    <a href="#">&laquo;</a>
+  {% endif %}
+  </li>
+
+  {% for num in questions.paginator.page_range %}
+    {% ifequal num questions.number %}
+      <li class="active">
+        <a href="#">{{ num }} <span class="sr-only">(current)</span></a>
+      </li>
+    {% else %}
+      <li>
+        <a href="?page={{ num }}">{{ num }}</a>
+      </li>
+    {% endifequal %}
+  {% endfor %}
+
+  <li{% if not questions.has_next %} class="disabled"{% endif %}>
+  {% if questions.has_next %}
+    <a href="?page={{ questions.next_page_number }}">&raquo;</a>
+  {% else %}
+    <a href="#">&raquo;</a>
+  {% endif %}
+  </li>
+</ul>
 <script>
 Search.init();
+
+$('.question').on('click', function () {
+  if ($(this).parent().hasClass('noanswer')) {
+    $(this).parent().removeClass('noanswer');
+  } else {
+    $(this).parent().addClass('noanswer');
+  }
+});
 </script>
 {% endblock %}

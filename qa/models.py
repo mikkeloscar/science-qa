@@ -3,10 +3,7 @@ from django.db.models.signals import post_save
 from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import ugettext_noop as __
 
-from uuidfield import UUIDField
-
 class Question(models.Model):
-    uuid = UUIDField(auto=True)
     question_da = models.CharField(_('question da'), max_length=200, blank=True)
     answer_da = models.TextField(_('answer da'), blank=True)
     question_en = models.CharField(_('question en'), max_length=200, blank=True)
@@ -30,19 +27,23 @@ class Question(models.Model):
         if lang == "en":
             return self.question_en
         else:
-            return self.question_da or self.question_en
+            return self.question_da
 
     def answer(self, lang):
         if lang == "en":
             return self.answer_en
         else:
-            return self.answer_da or self.answer_en
+            return self.answer_da
 
     def localeDict(self, lang):
         LANGS = ['da', 'en']
         if lang in LANGS:
+            if not self.question(lang) or not self.question(lang):
+                return None
+
             result = { 'question': self.question(lang),
-                       'answer': self.answer(lang) }
+                       'answer': self.answer(lang),
+                       'id': self.id }
             return result
         else:
             return None
@@ -125,21 +126,25 @@ class Degree(models.Model):
 
 class Rating(models.Model):
     question = models.ForeignKey(Question, verbose_name=_('question'))
-    rating = models.BooleanField(_('rating'))
+    rating = models.IntegerField(_('rating'))
     ku_user = models.CharField(_('KU user'), max_length=6)
     date_added = models.DateTimeField(_('date added'), auto_now_add=True)
 
     class Meta:
         verbose_name = _('rating')
         verbose_name_plural = _('ratings')
+        unique_together = ('question', 'ku_user')
 
     def __unicode__(self):
-        return self.rating
+        return str(self.rating)
 
     def clean(self):
         pattern = r'^[b-df-hj-np-tv-z]{3}\d{3}$'
         if len(self.ku_user) != 6 or not re.search(pattern, self.ku_user):
             raise ValidationError(_('Not a valid KU-username'))
+        elif self.rating not in [-1, 1]:
+            raise ValidationError(_('Not a valid rating'))
+
 
 def update_degrees(sender, instance, created, **kwargs):
     if created:
