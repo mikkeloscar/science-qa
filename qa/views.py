@@ -331,7 +331,8 @@ def list_qa(request, apikey=None):
             if categories or degree:
                 q = Question.objects.all()
                 if categories:
-                    q = q.filter(categories__category_id_da__in=categories).distinct()
+                    for cat in categories:
+                        q = q.filter(categories__category_id_da=cat).distinct()
 
                 if degree:
                     q = q.filter(degrees__degree_id_da=degree).distinct()
@@ -339,7 +340,8 @@ def list_qa(request, apikey=None):
             if categories or degree:
                 q = Question.objects.all()
                 if categories:
-                    q = q.filter(categories__category_id_en__in=categories).distinct()
+                    for cat in categories:
+                        q = q.filter(categories__category_id_en=cat).distinct()
 
                 if degree:
                     q = q.filter(degrees__degree_id_en=degree).distinct()
@@ -349,6 +351,7 @@ def list_qa(request, apikey=None):
         results = []
         for qa in q:
             results.append(qa.localeDict(locale))
+            print(qa.categories.all())
 
         response['results'] = results
     else:
