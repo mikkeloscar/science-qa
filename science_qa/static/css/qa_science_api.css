@@ -106,13 +106,13 @@
 
 .js-qa-categories a {
   display: inline-block;
-  padding: 2px 5px;
+  padding: 1px 5px;
   font-size: 9px;
-  color: white;
+  color: white !important;
   background-color: black;
   text-decoration: none;
   border-radius: 5px;
-  margin: 0 6px;
+  margin: 3px 5px;
 }
 
 .noanswer .js-qa-categories {

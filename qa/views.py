@@ -242,7 +242,7 @@ def search(request, apikey=None):
 
         if locale in ['da', 'en']:
             if query:
-                raw_query, params = searchSQL(query, limit=5)
+                raw_query, params = searchSQL(query, limit=5, degree=degree)
                 q = Question.objects.raw(raw_query, params)
 
                 if ku_user:
@@ -253,31 +253,6 @@ def search(request, apikey=None):
                     for vote in v:
                         ratings.append(vote.question_id)
                     response['ratings'] = ratings
-
-        #         q = Question.objects.all()
-        #         for _q in query:
-        #             q = q.filter(Q(question_da__icontains=_q) |
-        #                     Q(answer_da__icontains=_q))
-
-        #         if categories:
-        #             c = q.filter(categories__category_id_da__in=categories).distinct()
-
-        #         if degree:
-        #             d = q.filter(degrees__degree_id_da=degree).distinct()
-
-        #         # q = sortedQuery(list(q) + list(c) + list(d))
-
-        # elif locale == 'en':
-        #         q = Question.objects.all()
-        #         for _q in query:
-        #             q = q.filter(Q(question_en__icontains=_q) |
-        #                     Q(answer_en__icontains=_q))
-
-        #         if categories:
-        #             c = q.filter(categories__category_id_en__in=categories).distinct()
-
-        #         if degree:
-        #             d = q.filter(degrees__degree_id_en=degree).distinct()
         else:
             response['error'] = 'Invalid locale'
 
@@ -290,9 +265,12 @@ def search(request, apikey=None):
         response['error'] = 'Invalid API Key'
     return HttpResponse(json.dumps(response), content_type="application/json")
 
-def searchSQL(search, limit=None):
+
+def searchSQL(search, limit=None, degree=None):
     # TODO limit to degree if defined
-    raw = "SELECT *, "
+    raw = """SELECT `q`.`id`, `q`.`question_da`, `q`.`answer_da`,
+    `q`.`question_en`, `q`.`answer_en`, `q`.`degree_all_bsc`,
+    `q`.`degree_all_msc`, `q`.`date_added`, `q`.`date_last_edit`, """
     in_raw = []
     search_double = []
     for term in search:
@@ -300,14 +278,26 @@ def searchSQL(search, limit=None):
         search_double.append("%" + term + "%")
         search_double.append("%" + term + "%")
         search_double.append("%" + term + "%")
-        q = "CASE WHEN question_da LIKE %s THEN 1 ELSE 0 END\n"
-        q += "+ CASE WHEN answer_da LIKE %s THEN 1 ELSE 0 END\n"
-        q += "+ CASE WHEN question_en LIKE %s THEN 1 ELSE 0 END\n"
-        q += "+ CASE WHEN answer_en LIKE %s THEN 1 ELSE 0 END"
+        q = "CASE WHEN `q`.`question_da` LIKE %s THEN 1 ELSE 0 END\n"
+        q += "+ CASE WHEN `q`.`answer_da` LIKE %s THEN 1 ELSE 0 END\n"
+        q += "+ CASE WHEN `q`.`question_en` LIKE %s THEN 1 ELSE 0 END\n"
+        q += "+ CASE WHEN `q`.`answer_en` LIKE %s THEN 1 ELSE 0 END"
         in_raw.append(q)
-    raw += '\n+ '.join(in_raw) + ' matches\n'
-    raw += "FROM qa_question\n"
-    raw += " HAVING matches > 0 ORDER BY matches DESC"
+    raw += '\n+ '.join(in_raw) + ' matches,\n'
+    raw += 'IFNULL(SUM(`r`.`rating`), 0) as rating_count\n'
+    raw += "FROM `qa_question` `q`\n"
+    raw += "LEFT JOIN `qa_rating` `r` ON `r`.`question_id` = `q`.`id`\n"
+    if degree:
+        search_double.append(degree)
+        search_double.append(degree)
+        raw += "INNER JOIN `qa_question_degrees` ON ( `q`.`id` ="
+        raw += "`qa_question_degrees`.`question_id` )\n"
+        raw += "INNER JOIN `qa_degree` ON ( `qa_question_degrees`.`degree_id` "
+        raw += "= `qa_degree`.`id` )\n"
+        raw += "WHERE ( `qa_degree`.`degree_id_da` = %s OR "
+        raw += "`qa_degree`.`degree_id_en` = %s )\n"
+    raw += "GROUP BY `q`.`id`\n"
+    raw += " HAVING matches > 0 ORDER BY matches DESC, rating_count DESC"
     if limit:
         raw += " LIMIT %d" % limit
 
@@ -349,6 +339,16 @@ def list_qa(request, apikey=None):
         else:
             response['error'] = 'Invalid locale'
 
+        # find ratings
+        if ku_user:
+            v = Rating.objects.filter(ku_user=ku_user)
+            v = v.filter(question_id__in=q)
+
+            ratings = []
+            for vote in v:
+                ratings.append(vote.question_id)
+            response['ratings'] = ratings
+
         print(q.query)
 
         results = []
@@ -382,12 +382,10 @@ def single(request, apikey=None):
     return HttpResponse(json.dumps(response), content_type='application/json')
 
 
-
 @csrf_exempt
 def rate(request, apikey=None):
     if request.method == 'POST':
         response = { 'call': 'rate' }
-        # apikey = request.POST.get('apikey', None)
         if valid_api_key(apikey, request):
             id = request.POST.get('id', None)
             ku_username = request.POST.get('ku_user', "none")
@@ -398,8 +396,8 @@ def rate(request, apikey=None):
                 try:
                     rating.save()
                     response['success'] = True
-                except (ValidationError, IntegrityError), e:
-                    response['error'] = e.message
+                except (ValidationError, IntegrityError) as e:
+                    response['error'] = str(e)
 
         else:
             response['error'] = 'Invalid API Key'
@@ -409,6 +407,7 @@ def rate(request, apikey=None):
         return HttpResponse(json.dumps(response), content_type='application/json')
     else:
         return HttpResponseNotAllowed(['POST'])
+
 
 def valid_api_key(apikey, request):
     """ Checks if an API key is valid.
@@ -429,6 +428,3 @@ def valid_api_key(apikey, request):
                 return True
         else:
             return False
-
-# def sortedQuery(list):
-#     for arg in args:

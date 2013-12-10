@@ -139,14 +139,14 @@ function QAScienceException( message ) {
         var path = location.pathname.split('/');
         // only parse degree from url, if it has not been set programmatically.
         if (!settings.degree) {
-          if (settings.degree_re.test(path[0])) {
-            settings.degree = path[0];
+          if (settings.degree_re.test(path[1])) {
+            settings.degree = path[1];
           }
         }
         // only parse categories from url, if they has not been set
         // programmatically.
         if (settings.categories.length == 0) {
-          for (var i = 1; i < path.length; i++) {
+          for (var i = 2; i < path.length; i++) {
             if (settings.category_re.test(path[i])) {
               settings.categories.push(path[i]);
             }
@@ -748,61 +748,10 @@ function QAScienceException( message ) {
       res_tpl.addClass('noanswer');
       // }
 
-      console.log("split");
       // create links to category
       for (var i = 0; i < question['categories'].length; i++) {
-        categoryLink(question['categories'][i], res_tpl);
-      }
-
-      /**
-       * make categor links
-       * TODO sort by deeplink
-       */
-      function categoryLink( category, out ) {
-        var links = walkCategories(category, []);
-
-        for (var j = 0; j < links.length; j++) {
-          var link = links[j];
-          if (link.length > 1) {
-            link.reverse();
-          }
-
-          var cats = settings.categories.slice();
-          for (var x = 0; x < link.length; x++) {
-            if ($.inArray(link[x], settings.categories) > -1) {
-              cats.splice(cats.indexOf(link[x], 1));
-            }
-          }
-
-          if (cats.length > 0 && settings.degree) {
-            var href = '/' + settings.degree + '/' + link.join('/');
-
-            // create anchor
-            var a = $('<a href="' + href + '">'
-                + question.categories[i].name + '</a>');
-
-            res_tpl.find('.js-qa-categories').append(a);
-          }
-        }
-      }
-
-      /**
-       * walk through
-       */
-      function walkCategories( category, link ) {
-        links = [];
-        if (category) {
-          link.push(category.id);
-          if (category.parents.length > 0) {
-            for (var i = 0; i < category.parents.length; i++) {
-              links.push(walkCategories(category.parents[i], link));
-            }
-          } else {
-            links.push(link);
-          }
-        }
-
-        return links;
+        categoryLink(question['categories'][i], res_tpl,
+            question['categories'][i].name);
       }
 
       // check for rating
@@ -812,6 +761,56 @@ function QAScienceException( message ) {
       }
 
       out.append(res_tpl);
+    }
+
+    /**
+     * make categor links
+     * TODO sort by deeplink
+     */
+    function categoryLink( category, out, name ) {
+      var links = walkCategories(category, []);
+
+      for (var j = 0; j < links.length; j++) {
+        var link = links[j];
+        if (link.length > 1) {
+          link.reverse();
+        }
+
+        var cats = settings.categories.slice();
+        for (var x = 0; x < link.length; x++) {
+          if ($.inArray(link[x], settings.categories) > -1) {
+            cats.splice(cats.indexOf(link[x], 1));
+          }
+        }
+
+        if (cats.length > 0 && settings.degree != null) {
+          var href = '/' + settings.degree + '/' + link.join('/');
+
+          // create anchor
+          var a = $('<a href="' + href + '">' + name + '</a>');
+
+          out.find('.js-qa-categories').append(a);
+        }
+      }
+    }
+
+    /**
+     * walk through
+     */
+    function walkCategories( category, link ) {
+      links = [];
+      if (category) {
+        link.push(category.id);
+        if (category.parents.length > 0) {
+          for (var i = 0; i < category.parents.length; i++) {
+            links.push(walkCategories(category.parents[i], link));
+          }
+        } else {
+          links.push(link);
+        }
+      }
+
+      return links;
     }
 
     /**
