@@ -8,9 +8,9 @@ class Question(models.Model):
     answer_da = models.TextField(_('answer da'), blank=True)
     question_en = models.CharField(_('question en'), max_length=200, blank=True)
     answer_en = models.TextField(_('answer en'), blank=True)
-    categories = models.ManyToManyField('Category', related_name="cat+",
+    categories = models.ManyToManyField('Category', related_name="questions",
             verbose_name=_('Categories'))
-    degrees = models.ManyToManyField('Degree', related_name="degree+",
+    degrees = models.ManyToManyField('Degree', related_name="questions",
             verbose_name=_('Degrees'))
     degree_all_bsc = models.BooleanField(_('All Bsc degrees'))
     degree_all_msc = models.BooleanField(_('All Msc degrees'))
@@ -41,8 +41,31 @@ class Question(models.Model):
             if not self.question(lang) or not self.question(lang):
                 return None
 
+            c = self.categories.all()
+            cats = [ cat.category_id(lang) for cat in c ]
+
+            categories = []
+            for cat in c:
+                # parents = []
+                # for parent in Category.objects.filter(category=cat):
+                #     parent = parent.category_id(lang)
+                #     if parent in cats:
+                #         parents.append(parent)
+
+                cat = { 'id': cat.category_id(lang),
+                        'name': cat.name(lang),
+                        'parents': cat.get_parents(lang, cats) }
+
+                # pseudo sort by has parent
+                # TODO true sort by has num parents
+                # if len(parents) > 0:
+                #     categories.insert(0, cat)
+                # else:
+                categories.append(cat)
+
             result = { 'question': self.question(lang),
                        'answer': self.answer(lang),
+                       'categories': categories,
                        'id': self.id }
             return result
         else:
@@ -57,6 +80,8 @@ class Category(models.Model):
             blank=True)
     name_en = models.CharField(_('Category name (en)'), max_length=200,
             blank=True)
+    parents = models.ManyToManyField('self', verbose_name=_('Parent categories'),
+            symmetrical=False, blank=True, null=True)
     category_id_da = models.CharField(_('Category ID (da)'), max_length=200,
         help_text=_('The category ID is used to refrence category in the url @'
                     + ' kunet.dk'), blank=True)
@@ -77,6 +102,39 @@ class Category(models.Model):
             return self.name_en
         else:
             return self.name_da or self.name_en
+
+    def category_id(self, lang):
+        if lang == "en":
+            return self.category_id_en
+        else:
+            return self.category_id_da
+
+    def get_parents(self, lang, categories):
+        parents = []
+        for parent in self.parents.all():
+            if parent and parent.category_id(lang) in categories:
+                p = { 'id': parent.category_id(lang),
+                      'name': parent.name(lang),
+                      'parents': parent.get_parents(lang, categories) }
+                parents.append(p)
+        #
+        # categories = [ { name: "Valg",
+        #                  links: [
+        #                           [ 'uddannelse', 'valg' ],
+        #                           [ 'uddannelse', 'eksamen' ]
+        #                ] }
+        #              ]
+        #
+
+        return parents
+
+
+    # def parent_list(self, lang, categories):
+    #     links = []
+    #     for parent in self.parents.all():
+    #         if parent and parent.category_id(lang) in categories:
+    #             links = []
+
 
     def __unicode__(self):
         return self.name_da or self.name_en

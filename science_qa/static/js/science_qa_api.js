@@ -254,16 +254,6 @@ function QAScienceException( message ) {
       $('#js-qa-contact-subject').on('input', contactSearch);
 
       $('#js-qa-contact-message').on('input', contactSearch);
-
-      $('#js-qa-results-contact').on('click', '.js-qa-question', function () {
-        // e.preventDefault();
-        var qa = $(this).parent();
-        if (qa.hasClass('noanswer')) {
-          qa.removeClass('noanswer');
-        } else {
-          qa.addClass('noanswer');
-        }
-      });
     }
 
     /**
@@ -482,6 +472,7 @@ function QAScienceException( message ) {
 
       var tpl = '<li class="js-qa-qa"><a href="#" class="js-qa-question">'
               + '</a><div class="js-qa-answer"></div>'
+              + '<div class="js-qa-categories"></div>'
               + '<div class="js-qa-rating">' + rating_text
               + '<span class="js-qa-rate"><a href="1">' + rating_yes
               + '</a> / <a href="-1">' + rating_no + '</a></span></div></li>';
@@ -512,6 +503,15 @@ function QAScienceException( message ) {
         if ($(this).attr('href') !== "#") {
           history.pushState(null, null, $(this).attr('href'));
         }
+
+        // toggle show question on click
+        var qa = $(this).parent();
+        if (qa.hasClass('noanswer')) {
+          qa.removeClass('noanswer');
+        } else {
+          qa.addClass('noanswer');
+        }
+
         return false;
       });
 
@@ -726,29 +726,92 @@ function QAScienceException( message ) {
         if (response['results'].length > 0) {
           res.parent().addClass('js-qa-results-found');
           for (var i = 0; i < response['results'].length; i++) {
-            var res_tpl = $(settings.result_tpl);
-
-            var url = '?qa-id=' + response['results'][i]['id'];
-
-            res_tpl.attr('id', response['results'][i]['id']);
-            res_tpl.find('.js-qa-question')
-                   .append(response['results'][i]['question']);
-            res_tpl.find('.js-qa-question').attr('href', url);
-            res_tpl.find('.js-qa-answer')
-                   .append(response['results'][i]['answer']);
-            if (noanswer) {
-              res_tpl.addClass('noanswer');
-            }
-
-            if ('ratings' in response &&
-                $.inArray(response['results'][i]['id'],
-                          response['ratings']) > -1) {
-              res_tpl.addClass('hasvoted');
-            }
-            res.append(res_tpl);
+            renderQuestion(response['results'][i], response, res);
           }
         }
       }
+    }
+
+    /**
+     * Render a single question
+     */
+    function renderQuestion( question, response, out ) {
+      var res_tpl = $(settings.result_tpl);
+
+      var url = '?qa-id=' + question['id'];
+
+      res_tpl.attr('id', question['id']);
+      res_tpl.find('.js-qa-question').append(question['question']);
+      res_tpl.find('.js-qa-question').attr('href', url);
+      res_tpl.find('.js-qa-answer').append(question['answer']);
+      // if (noanswer) {
+      res_tpl.addClass('noanswer');
+      // }
+
+      console.log("split");
+      // create links to category
+      for (var i = 0; i < question['categories'].length; i++) {
+        categoryLink(question['categories'][i], res_tpl);
+      }
+
+      /**
+       * make categor links
+       * TODO sort by deeplink
+       */
+      function categoryLink( category, out ) {
+        var links = walkCategories(category, []);
+
+        for (var j = 0; j < links.length; j++) {
+          var link = links[j];
+          if (link.length > 1) {
+            link.reverse();
+          }
+
+          var cats = settings.categories.slice();
+          for (var x = 0; x < link.length; x++) {
+            if ($.inArray(link[x], settings.categories) > -1) {
+              cats.splice(cats.indexOf(link[x], 1));
+            }
+          }
+
+          if (cats.length > 0 && settings.degree) {
+            var href = '/' + settings.degree + '/' + link.join('/');
+
+            // create anchor
+            var a = $('<a href="' + href + '">'
+                + question.categories[i].name + '</a>');
+
+            res_tpl.find('.js-qa-categories').append(a);
+          }
+        }
+      }
+
+      /**
+       * walk through
+       */
+      function walkCategories( category, link ) {
+        links = [];
+        if (category) {
+          link.push(category.id);
+          if (category.parents.length > 0) {
+            for (var i = 0; i < category.parents.length; i++) {
+              links.push(walkCategories(category.parents[i], link));
+            }
+          } else {
+            links.push(link);
+          }
+        }
+
+        return links;
+      }
+
+      // check for rating
+      if ('ratings' in response && $.inArray(question['id'],
+            response['ratings']) > -1) {
+        res_tpl.addClass('hasvoted');
+      }
+
+      out.append(res_tpl);
     }
 
     /**

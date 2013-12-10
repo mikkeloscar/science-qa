@@ -242,7 +242,7 @@ def search(request, apikey=None):
 
         if locale in ['da', 'en']:
             if query:
-                raw_query, params = buildSearchQuery(query, limit=5)
+                raw_query, params = searchSQL(query, limit=5)
                 q = Question.objects.raw(raw_query, params)
 
                 if ku_user:
@@ -290,7 +290,7 @@ def search(request, apikey=None):
         response['error'] = 'Invalid API Key'
     return HttpResponse(json.dumps(response), content_type="application/json")
 
-def buildSearchQuery(search, limit=None):
+def searchSQL(search, limit=None):
     # TODO limit to degree if defined
     raw = "SELECT *, "
     in_raw = []
@@ -306,7 +306,8 @@ def buildSearchQuery(search, limit=None):
         q += "+ CASE WHEN answer_en LIKE %s THEN 1 ELSE 0 END"
         in_raw.append(q)
     raw += '\n+ '.join(in_raw) + ' matches\n'
-    raw += "FROM qa_question HAVING matches > 0 ORDER BY matches DESC"
+    raw += "FROM qa_question\n"
+    raw += " HAVING matches > 0 ORDER BY matches DESC"
     if limit:
         raw += " LIMIT %d" % limit
 
@@ -348,10 +349,11 @@ def list_qa(request, apikey=None):
         else:
             response['error'] = 'Invalid locale'
 
+        print(q.query)
+
         results = []
         for qa in q:
             results.append(qa.localeDict(locale))
-            print(qa.categories.all())
 
         response['results'] = results
     else:
