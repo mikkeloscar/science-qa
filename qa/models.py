@@ -22,6 +22,7 @@ class Question(models.Model):
         verbose_name_plural = _('questions')
         # extend permissions created by django-admin
         permissions = (("view_question", "Can view question"),)
+        ordering = ['question_da', 'question_en']
 
     def question(self, lang):
         if lang == "en":
@@ -46,18 +47,11 @@ class Question(models.Model):
 
             categories = []
             for cat in c:
-                # parents = []
-                # for parent in Category.objects.filter(category=cat):
-                #     parent = parent.category_id(lang)
-                #     if parent in cats:
-                #         parents.append(parent)
-
                 cat = { 'id': cat.category_id(lang),
                         'name': cat.name(lang),
                         'parents': cat.get_parents(lang, cats) }
 
-                # pseudo sort by has parent
-                # TODO true sort by has num parents
+                # TODO sort by has num parents
                 # if len(parents) > 0:
                 #     categories.insert(0, cat)
                 # else:
@@ -96,6 +90,7 @@ class Category(models.Model):
         verbose_name_plural = _('categories')
         # extend permissions created by django-admin
         permissions = (("view_category", "Can view category"),)
+        ordering = ['name_da', 'name_en']
 
     def name(self, lang):
         if lang == "en":
@@ -117,24 +112,8 @@ class Category(models.Model):
                       'name': parent.name(lang),
                       'parents': parent.get_parents(lang, categories) }
                 parents.append(p)
-        #
-        # categories = [ { name: "Valg",
-        #                  links: [
-        #                           [ 'uddannelse', 'valg' ],
-        #                           [ 'uddannelse', 'eksamen' ]
-        #                ] }
-        #              ]
-        #
 
         return parents
-
-
-    # def parent_list(self, lang, categories):
-    #     links = []
-    #     for parent in self.parents.all():
-    #         if parent and parent.category_id(lang) in categories:
-    #             links = []
-
 
     def __unicode__(self):
         return self.name_da or self.name_en
@@ -164,6 +143,7 @@ class Degree(models.Model):
         verbose_name_plural = _('degrees')
         # extend permissions created by django-admin
         permissions = (("view_degree", "Can view degree"),)
+        ordering = ['name_da', 'name_en']
 
     def __unicode__(self):
         return self.name_da or self.name_en
@@ -206,7 +186,6 @@ class Rating(models.Model):
 
 def update_degrees(sender, instance, created, **kwargs):
     if created:
-        # TODO update every question with all msc or all bsc set to true
         questions = Question.objects.all()
         for q in questions:
             if q.degree_all_bsc and instance.level == 'bsc':

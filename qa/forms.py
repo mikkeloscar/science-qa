@@ -16,20 +16,17 @@ class BootstrapForm(forms.ModelForm):
 class QuestionForm(BootstrapForm):
     def __init__(self, *args, **kwargs):
         super(QuestionForm, self).__init__(*args, **kwargs)
-        self.fields['answer_da'].widget.attrs['rows'] = 3
-        self.fields['answer_en'].widget.attrs['rows'] = 3
+        self.fields['answer_da'].widget.attrs['rows'] = 7
+        self.fields['answer_en'].widget.attrs['rows'] = 7
+        # self.fields['degrees'].widget.attrs['class'] = 'large-select'
         self.fields['degree_all_bsc'].widget.attrs['class'] = None
         self.fields['degree_all_msc'].widget.attrs['class'] = None
         choices = self.fields['categories'].choices
         self.fields['categories'].widget = FilteredSelectMultiple(
                 _('categories'), False, attrs={'rows': '10'}, choices=choices)
 
-
     class Media:
         js = ['/admin/jsi18n/']
-        # css = {
-        #         'all':('')
-        #         }
 
     class Meta:
         model = Question
