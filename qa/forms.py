@@ -1,5 +1,7 @@
 from django import forms
 from django.utils.translation import ugettext as _
+from django.contrib.admin.widgets import FilteredSelectMultiple
+from django.forms.widgets import CheckboxSelectMultiple
 
 from qa.models import Question, Category, Degree
 
@@ -18,6 +20,16 @@ class QuestionForm(BootstrapForm):
         self.fields['answer_en'].widget.attrs['rows'] = 3
         self.fields['degree_all_bsc'].widget.attrs['class'] = None
         self.fields['degree_all_msc'].widget.attrs['class'] = None
+        choices = self.fields['categories'].choices
+        self.fields['categories'].widget = FilteredSelectMultiple(
+                _('categories'), False, attrs={'rows': '10'}, choices=choices)
+
+
+    class Media:
+        js = ['/admin/jsi18n/']
+        # css = {
+        #         'all':('')
+        #         }
 
     class Meta:
         model = Question

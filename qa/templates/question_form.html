@@ -5,6 +5,8 @@
 
 {% block js %}
 <script type="text/javascript" charset="utf-8" src="{{ STATIC_URL }}js/question.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}/admin/js/jquery.init.js"></script>
+{{ form.media }}
 {% endblock %}
 
 {% block content %}
@@ -55,7 +57,7 @@
       <!-- TODO Fix dan/eng names -->
       {{ form.categories }}
       {# <a href="{% url 'category_add' %}">{% trans "Add new category" %}</a> #}
-      <span class="help-block">{{ form.categories.help_text }}</span>
+      {# <span class="help-block">{{ form.categories.help_text }}</span> #}
   </div>
   <div class="form-group {% if form.degrees.errors %}has-error{% endif %}">
     <label class="control-label" for="id_degrees">{{ form.degrees.label }}</label>

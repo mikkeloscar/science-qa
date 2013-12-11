@@ -349,8 +349,6 @@ def list_qa(request, apikey=None):
                 ratings.append(vote.question_id)
             response['ratings'] = ratings
 
-        print(q.query)
-
         results = []
         for qa in q:
             results.append(qa.localeDict(locale))
