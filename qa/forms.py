@@ -1,8 +1,8 @@
 from django import forms
 from django.utils.translation import ugettext as _
-from django.contrib.admin.widgets import FilteredSelectMultiple
-from django.forms.widgets import CheckboxSelectMultiple
+# from django.contrib.admin.widgets import FilteredSelectMultiple
 
+from qa.widgets import FilteredSelectMultiple
 from qa.models import Question, Category, Degree
 
 class BootstrapForm(forms.ModelForm):

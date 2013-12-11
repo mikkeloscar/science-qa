@@ -11,6 +11,8 @@
     {% block css %}
     {% endblock %}
     {% endcompress %}
+    {% block prejquery %}
+    {% endblock %}
     <script type="text/javascript" charset="utf-8" src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
     {# {% compress js %} #}
     {% block js %}
@@ -42,7 +44,7 @@
       </div>
     </div>
     <div id="content">
-      <h1 class="page-title">{% block page-title %}{% endblock %}</h1>
+      <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
       {% block content %}{% endblock %}
     </div>
   </body>

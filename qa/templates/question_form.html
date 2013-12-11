@@ -3,21 +3,25 @@
 {% load i18n %}
 {% load qa %}
 
-{% block js %}
-<script type="text/javascript" charset="utf-8" src="{{ STATIC_URL }}js/question.js"></script>
-<script type="text/javascript" src="{{ STATIC_URL }}/admin/js/jquery.init.js"></script>
+{% block prejquery %}
+<script type="text/javascript" src="{{ STATIC_URL }}admin/js/jquery.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}admin/js/jquery.init.js"></script>
 {{ form.media }}
 {% endblock %}
 
-{% block content %}
+{% block js %}
+<script type="text/javascript" charset="utf-8" src="{{ STATIC_URL }}js/question.js"></script>
+{% endblock %}
 
-{% block page-title %}
+{% block page_title %}
   {% if action == "add" %}
   {% trans "Add question" %}
   {% elif action == "edit" %}
-  {% trans "Edit question" %}
+  {% trans "Edit questions" %}
   {% endif %}
 {% endblock %}
+
+{% block content %}
 
 
 <form role="form" action="{{ request.path }}" method="post" role="form">
