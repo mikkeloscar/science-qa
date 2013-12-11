@@ -86,7 +86,7 @@ function QAScienceException( message ) {
      */
     function setLocale() {
       if (settings.locale_id && !settings.locale) {
-        var locale = $(settings.locale_id).html();
+        var locale = $(settings.locale_id).html().trim();
         if (locale === "Danish") {
           settings.locale = 'en';
         } else {
