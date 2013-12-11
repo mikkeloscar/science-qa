@@ -5,6 +5,10 @@ from django.views.generic import RedirectView
 from django.contrib import admin
 admin.autodiscover()
 
+js_info_dict = {
+    'packages': ('django.contrib.admin',),
+}
+
 urlpatterns = patterns('',
     # Examples:
     # url(r'^$', 'science_qa.views.home', name='home'),
@@ -22,4 +26,5 @@ urlpatterns = patterns('',
         'template_name': 'login.html' }),
     url(r'^logout/', 'django.contrib.auth.views.logout', {
         'template_name': 'logout.html' }),
+    url(r'^jsi18n/$', 'django.views.i18n.javascript_catalog', js_info_dict),
 )

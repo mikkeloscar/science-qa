@@ -26,7 +26,7 @@ class QuestionForm(BootstrapForm):
                 _('categories'), False, attrs={'rows': '10'}, choices=choices)
 
     class Media:
-        js = ['/admin/jsi18n/']
+        js = ['/jsi18n/']
 
     class Meta:
         model = Question
