@@ -9,6 +9,8 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.decorators.csrf import csrf_exempt
 
+from qa.filters import PageFilter
+
 
 from django.db import IntegrityError
 from django.db.models import Q
@@ -21,24 +23,61 @@ from qa.models import Question, Category, Degree, Rating
 from qa.forms import QuestionForm, CategoryForm, DegreeForm
 from api_key_manager.models import APIKey
 
+def clean_list(list):
+    l = []
+    for e in list:
+        if e != '' and e.isdigit():
+            l.append(int(e))
+    return l
+
+def clean_order_list(list):
+    l = []
+    for e in list:
+        if e != '':
+            l.append(e)
+    return l
 
 def index(request):
     return HttpResponse()
 
 @permission_required('qa.view_question')
 def questions(request):
-    q = request.GET.get('q')
+    q = request.GET.get('q', None)
+    c = request.GET.get('c', [])
+    d = request.GET.get('d', [])
+    page = request.GET.get('p', 1)
+    o = request.GET.get('o', [])
+
+    categories = []
+    degrees = []
+
+    questions = Question.objects.all()
+
     if q:
-        questions = Question.objects.filter(question_da__icontains=q)
-        if request.is_ajax():
-            data = serializers.serialize("json", questions)
-            return HttpResponse(data, content_type="application/json")
-    else:
-        questions = Question.objects.all()
+        questions = questions.filter(question_da__icontains=q)
+        questions = questions.filter(answer_da__icontains=q)
+        questions = questions.filter(question_en__icontains=q)
+        questions = questions.filter(answer_en__icontains=q)
+    if len(c) > 0:
+        categories = clean_list(c.split('.'))
+        if len(categories) > 0:
+            questions = questions.filter(categories__in=categories)
+    if len(d) > 0:
+        degrees = clean_list(d.split('.'))
+        if len(degrees) > 0:
+            questions = questions.filter(degrees__in=degrees)
+    if len(o) > 0:
+        order = clean_order_list(o.split('.'))
+        if len(order) > 0:
+            questions = questions.order_by(*order)
 
-    paginator = Paginator(questions, 20)
+    # check if request is ajax
+    if request.is_ajax():
+        data = serializers.serialize("json", questions)
+        return HttpResponse(data, content_type="application/json")
 
-    page = request.GET.get('page')
+    paginator = PageFilter(request.GET, questions.distinct(), 20)
+
     try:
         questions = paginator.page(page)
     except PageNotAnInteger:
@@ -46,7 +85,13 @@ def questions(request):
     except EmptyPage:
         questions = paginator.page(paginator.num_pages)
 
-    return render(request, 'questions.html', { 'questions': questions })
+    filters = { 'categories': Category.objects.all(),
+                'degrees': Degree.objects.all() }
+
+    return render(request, 'questions.html', { 'questions': questions,
+                                               'filters': filters,
+                                               'c': categories,
+                                               'd': degrees })
 
 @permission_required('qa.add_question')
 def question_add(request):

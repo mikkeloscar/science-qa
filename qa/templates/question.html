@@ -1,3 +1,5 @@
+{% load i18n %}
+
 {% if question.question_da and question.answer_da %}
 <div class="question-answer noanswer">
   <div class="question">
@@ -14,3 +16,15 @@
   <div class="answer">{{ question.answer_en }}</div>
 </div>
 {% endif %}
+<div class="categories">
+  <span class="title small">{% trans "Categories" %}:</span>
+{% for category in question.categories.all %}
+  <span class="category tag{% if category.id in c %} active{% endif %}">{{ category }}</span>
+{% endfor %}
+</div>
+<div class="degrees">
+  <span class="title small">{% trans "Degrees" %}:</span>
+{% for degree in question.degrees.all %}
+<span class="degree tag{% if degree.id in d %} active{% endif %}">{{ degree }}</span>
+{% endfor %}
+</div>

@@ -98,6 +98,9 @@ class Category(models.Model):
         else:
             return self.name_da or self.name_en
 
+    def name_(self):
+        return self.__unicode__()
+
     def category_id(self, lang):
         if lang == "en":
             return self.category_id_en
@@ -144,6 +147,9 @@ class Degree(models.Model):
         # extend permissions created by django-admin
         permissions = (("view_degree", "Can view degree"),)
         ordering = ['name_da', 'name_en']
+
+    def name_(self):
+        return self.__unicode__()
 
     def __unicode__(self):
         return self.name_da or self.name_en

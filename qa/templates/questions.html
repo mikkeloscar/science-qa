@@ -5,6 +5,7 @@
 {# Fix static files #}
 {% block js %}
 <script type="text/javascript" charset="utf-8" src="{{ STATIC_URL }}js/search.js"></script>
+<script type="text/javascript" charset="utf-8" src="{{ STATIC_URL }}js/question.js"></script>
 {% endblock %}
 
 {% block nav-qa %} class="active"{% endblock %}
@@ -18,7 +19,45 @@
 </p>
 
 <p>
-<input type="text" class="form-control filter" id="search" name="question" placeholder="{% trans "Filter.." %}" />
+<label for="search">{% trans "Søg" %}</label>
+<input type="text" class="form-control filter" id="search" name="question" placeholder="{% trans "Søg.." %}" />
+</p>
+<p>
+
+{# Custom filter #}
+<div class="filter-wrapper">
+  <div class="head">{% trans "Filter" %}</div>
+
+  <div class="filter-wrap">
+    <div class="title">{% trans "Categories" %}</div>
+    <div id="categories" class="categories checkbox-list">
+    {% for category in filters.categories %}
+    <div class="checkbox">
+      <label>
+        <input name="category" type="checkbox" value="{{ category.id }}" {% if category.id in c %}checked="checked" {% endif %}/>
+        {{ category.name_ }}
+      </label>
+    </div>
+    {% endfor %}
+    </div>
+  </div>
+
+  <div class="filter-wrap">
+    <div class="title">{% trans "Degrees" %}</div>
+    <div class="checkbox-list" id="degrees">
+    {% for degree in filters.degrees %}
+    <div class="checkbox">
+      <label>
+        <input name="degree" type="checkbox" value="{{ degree.id }}" {% if degree.id in d %}checked="checked" {% endif %}/>
+        {{ degree.name_da }}
+      </label>
+    </div>
+    {% endfor %}
+    </div>
+  </div>
+</div>
+
+<a href="#" class="btn btn-default" id="filter">{% trans "Filter" %}</a>
 </p>
 <table class="table table-striped">
   <thead>
@@ -35,7 +74,7 @@
 {% for question in questions %}
 <tr>
   <td class="qa-row">
-    {% include "question.html" with question=question %}
+    {% include "question.html" with question=question c=c d=d %}
   </td>
   <td>{{ question.date_added }}</td>
   <td>{{ question.date_last_edit }}</td>
@@ -59,7 +98,7 @@
 <ul class="pagination">
   <li{% if not questions.has_previous %} class="disabled"{% endif %}>
   {% if questions.has_previous %}
-    <a href="?page={{ questions.previous_page_number }}">&laquo;</a>
+    <a href="{{ questions.page_link }}{{ questions.previous_page_number }}">&laquo;</a>
   {% else %}
     <a href="#">&laquo;</a>
   {% endif %}
@@ -72,14 +111,14 @@
       </li>
     {% else %}
       <li>
-        <a href="?page={{ num }}">{{ num }}</a>
+        <a href="{{ questions.page_link }}{{ num }}">{{ num }}</a>
       </li>
     {% endifequal %}
   {% endfor %}
 
   <li{% if not questions.has_next %} class="disabled"{% endif %}>
   {% if questions.has_next %}
-    <a href="?page={{ questions.next_page_number }}">&raquo;</a>
+  <a href="{{ questions.page_link }}{{ questions.next_page_number }}">&raquo;</a>
   {% else %}
     <a href="#">&raquo;</a>
   {% endif %}
@@ -88,12 +127,6 @@
 <script>
 Search.init();
 
-$('.question').on('click', function () {
-  if ($(this).parent().hasClass('noanswer')) {
-    $(this).parent().removeClass('noanswer');
-  } else {
-    $(this).parent().addClass('noanswer');
-  }
-});
+QuestionIndex.init();
 </script>
 {% endblock %}

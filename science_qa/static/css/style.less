@@ -74,6 +74,64 @@ select.form-control {
     display: none;
 }
 
+.filter-wrapper {
+    border: 1px solid #ccc;
+    background: #f2f2f2;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+
+    .head {
+        font-weight: bold;
+        margin: 3px 0 20px 0;
+        // if open
+        border-bottom: 1px solid #ccc;
+    }
+
+    .filter-wrap {
+        display: inline-block;
+        margin: 0 30px;
+
+        .title {
+            font-weight: bold;
+        }
+    }
+}
+
+.checkbox-list {
+    width: auto;
+    height: 300px;
+    overflow: auto;
+    display: inline-block;
+    border: 1px solid #ccc;
+    padding: 10px;
+}
+
+span.small {
+    font-size: 11px;
+}
+
+.tag {
+    font-size: 11px;
+    display: inline-block;
+    padding: 1px 3px;
+    margin: 0 3px;
+    color: #555;
+    background: #e3e3e3;
+    border-radius: 3px;
+}
+
+.tag.active {
+    background: #222;
+    color: #f2f2f2;
+}
+
+span.title {
+    font-weight: bold;
+    width: 70px;
+    display: inline-block;
+}
+
 .selector-available, .selector-chooser, .selector-chosen {
     display: inline-block;
     vertical-align: top;

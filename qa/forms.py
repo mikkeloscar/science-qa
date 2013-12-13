@@ -1,6 +1,7 @@
 from django import forms
 from django.utils.translation import ugettext as _
-# from django.contrib.admin.widgets import FilteredSelectMultiple
+
+from django.forms.widgets import CheckboxSelectMultiple
 
 from qa.widgets import FilteredSelectMultiple
 from qa.models import Question, Category, Degree
@@ -18,7 +19,6 @@ class QuestionForm(BootstrapForm):
         super(QuestionForm, self).__init__(*args, **kwargs)
         self.fields['answer_da'].widget.attrs['rows'] = 7
         self.fields['answer_en'].widget.attrs['rows'] = 7
-        # self.fields['degrees'].widget.attrs['class'] = 'large-select'
         self.fields['degree_all_bsc'].widget.attrs['class'] = None
         self.fields['degree_all_msc'].widget.attrs['class'] = None
         choices = self.fields['categories'].choices
@@ -62,13 +62,6 @@ class QuestionForm(BootstrapForm):
         if not question_da and not question_en:
             raise forms.ValidationError(_("Fill out at least one "
                 "question/answer pair"))
-        # else:
-        #     if question_da and not answer_da:
-        #         raise forms.ValidationError(_("Please add an answer to the "
-        #             "question"))
-        #     elif question_en and not answer_en:
-        #         raise forms.ValidationError(_("Please add an answer to the "
-        #             "question"))
 
         return cleaned_data
 

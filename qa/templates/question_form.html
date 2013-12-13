@@ -3,6 +3,7 @@
 {% load i18n %}
 {% load qa %}
 
+{# We might not need to load jquery twice #}
 {% block prejquery %}
 <script type="text/javascript" src="{{ STATIC_URL }}admin/js/jquery.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}admin/js/jquery.init.js"></script>
@@ -57,11 +58,9 @@
   <div class="form-group {% if form.categories.errors %}has-error{% endif %}">
     <label class="control-label" for="id_categories">{{ form.categories.label }}</label>
     {{ form.categories.errors }}
-    {# <select multiple class="form-control" id="id_categories" name="categories" /> #}
       <!-- TODO Fix dan/eng names -->
       {{ form.categories }}
       {# <a href="{% url 'category_add' %}">{% trans "Add new category" %}</a> #}
-      {# <span class="help-block">{{ form.categories.help_text }}</span> #}
   </div>
   <div class="form-group {% if form.degrees.errors %}has-error{% endif %}">
     <label class="control-label" for="id_degrees">{{ form.degrees.label }}</label>
