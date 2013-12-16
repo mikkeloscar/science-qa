@@ -133,6 +133,9 @@ STATICFILES_FINDERS = (
     'compressor.finders.CompressorFinder',
 )
 
+# make sure this folder is writeable by the user running the django instance
+ATTACHMENT_ROOT = os.path.join(PROJECT_ROOT, 'attachments')
+
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = config['key']['secret'] or '5-v%(r#pd+mr&(81@%cmpr(hm&7b3^@ormcfh@_sokijh0j!)v'
 

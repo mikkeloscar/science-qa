@@ -1,3 +1,8 @@
+import json
+import uuid
+import os
+import urllib
+
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotAllowed
 from django.contrib.auth.decorators import login_required, permission_required
 from django.shortcuts import render, get_object_or_404
@@ -8,19 +13,16 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.decorators.csrf import csrf_exempt
-
-from qa.filters import PageFilter
-
-
 from django.db import IntegrityError
 from django.db.models import Q
+from django.utils.text import slugify
 
 from urlparse import urlparse
-import json
 
-
+from qa.filters import PageFilter
 from qa.models import Question, Category, Degree, Rating
 from qa.forms import QuestionForm, CategoryForm, DegreeForm
+from qa.jsonp import JsonpResponse
 from api_key_manager.models import APIKey
 
 def clean_list(list):
@@ -308,7 +310,7 @@ def search(request, apikey=None):
         response['results'] = results
     else:
         response['error'] = 'Invalid API Key'
-    return HttpResponse(json.dumps(response), content_type="application/json")
+    return JsonpResponse(response, request.GET.get('callback'))
 
 
 def searchSQL(search, limit=None, degree=None):
@@ -401,7 +403,7 @@ def list_qa(request, apikey=None):
         response['results'] = results
     else:
         response['error'] = 'Invalid API Key'
-    return HttpResponse(json.dumps(response), content_type='application/json')
+    return JsonpResponse(response, request.GET.get('callback'))
 
 
 def single(request, apikey=None):
@@ -452,6 +454,40 @@ def rate(request, apikey=None):
         return HttpResponseNotAllowed(['POST'])
 
 
+@csrf_exempt
+def attachments(request, apikey=None):
+    if valid_api_key(apikey, request):
+        if request.method == 'POST':
+            response = handle_attachment(request.FILES['files'])
+        else:
+            return HttpResponseNotAllowed(['POST'])
+    else:
+        response['error'] = 'Invalid API Key'
+
+    # if redirect is set, the request was done in an iframe (IE)
+    redirect = request.POST.get('redirect', None)
+
+    if redirect:
+        query = urllib.quote_plus(json.dumps(response).replace(' ', ''))
+        page = redirect % query
+        return HttpResponseRedirect(page)
+
+    # # serve IE the right (wrong) content_type
+    # accept_header = request.META.get('HTTP_ACCEPT', '')
+    # content_types = accept_header.split(', ')
+
+    # # if 'application/json' not in content_types:
+    # content_type = 'text/plain'
+    # # else:
+    # #     content_type = 'application/json'
+
+    # print(content_type)
+
+    return HttpResponse(json.dumps(response), content_type='application/json')
+
+
+
+
 def valid_api_key(apikey, request):
     """ Checks if an API key is valid.
     The API Key is provided by the cleint in a HTTP request, and is looked up
@@ -471,3 +507,22 @@ def valid_api_key(apikey, request):
                 return True
         else:
             return False
+
+
+def handle_attachment(f):
+    """
+    save attachment and return dict with file info
+    """
+    name = [slugify(p) for p in f.name.split('.')]
+    name = '.'.join(name)
+    _uuid = str(uuid.uuid4())
+    filename = _uuid + '_' + name
+    pathname = os.path.join(settings.ATTACHMENT_ROOT, filename)
+    with open(pathname, 'wb+') as destination:
+        for chunk in f.chunks():
+            destination.write(chunk)
+
+    return { 'files': [ { 'name': name,
+                          'uuid': _uuid,
+                          'size': f.size,
+                          'content_type': f.content_type } ] }

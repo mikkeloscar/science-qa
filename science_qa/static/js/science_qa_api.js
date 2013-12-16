@@ -7,6 +7,7 @@ function QAScienceException( message ) {
 }
 
 (function ( $ ) {
+
   // qaSearch definition
   $.fn.qaScience = function( options ) {
 
@@ -30,7 +31,7 @@ function QAScienceException( message ) {
       contactBodyPlaceHolder_en: 'Message',
       contactSubmitText_da: 'Send',
       contactSubmitText_en: 'Send',
-      contactQFound_da: 'Maaske kan du finde svaret paa dit spørgsmaal her',
+      contactQFound_da: 'Måske kan du finde svaret på dit spørgsmål her',
       contactQFound_en: 'You may be able to find the answer to your question here',
       listTitle_da: 'Ofte stillede spørgsmål',
       listTitle_en: 'Frequently asked questions',
@@ -46,11 +47,15 @@ function QAScienceException( message ) {
       username: null,
       degree_re: /^[a-z_]+(ba|ma)$/i,
       category_re: /^[a-z]+$/,
-      backend: 'https://qa.moscar.net/',
+      backend: 'https://qa.moscar.net/'
     };
 
     // settings
     var settings = $.extend( {}, defaults, options );
+
+    // Global attachments list, used for keeping track of attachments in the
+    // contact form
+    var attachments = [];
 
     // check for API Key
     checkForAPIKey();
@@ -118,7 +123,7 @@ function QAScienceException( message ) {
       for (var i = 0; i < ca.length; i++) {
         var c = ca[i];
         while (c.charAt(0) == ' ') c = c.substring(1, c.length);
-        if (c.indexOf(nameEQ) == 0)
+        if ($.inArray(nameEQ, c) == 0)
           return c.substring(nameEQ.length, c.length);
       }
       return null;
@@ -184,17 +189,25 @@ function QAScienceException( message ) {
       $(self).append(superWrapper);
 
       // setup binds for search form
-      $('#js-qa-search').on('input', function(e) {
-        // do stuff
-        var search = $(this).val();
+      if (isIE() && isIE() < 9) {
+        $('#js-qa-search').on('keyup', search);
+      } else {
+        $('#js-qa-search').on('input', search);
+      }
+    }
 
-        if (search.length > 2) {
-          searchAPI($(this).val());
-        } else if( search.length == 0 ) {
-          $('#js-qa-results-search .js-qa-qa').remove();
-          // $('#js-qa-results-search').parent().removeClass('js-qa-results-found');
-        }
-      });
+    /**
+     * Search for QA's
+     */
+    function search( e ) {
+      // do stuff
+      var search = $(this).val();
+
+      if (search.length > 2) {
+        searchAPI($(this).val());
+      } else if( search.length == 0 ) {
+        $('#js-qa-results-search .js-qa-qa').remove();
+      }
     }
 
     /**
@@ -224,6 +237,10 @@ function QAScienceException( message ) {
                     + emailPlaceHolder + '" disabled="disabled" /></div>');
       var subject = $('<div><input type="text" id="js-qa-contact-subject"'
                     + ' placeholder="' + titlePlaceHolder + '" /></div>');
+      var attachments = $('<input id="js-qa-attachments" type="file"'
+                        + ' name="files" data-url="' + settings.backend
+                        + 'api/attachments/' + settings.api_key
+                        + '/" multiple>');
       var results = $('<div class="js-qa-results-wrap">'
                     + '<div class="js-qa-results-title">' + qFound + '</div>'
                     + '<ul id="js-qa-results-contact" class="js-qa-results">'
@@ -235,6 +252,7 @@ function QAScienceException( message ) {
       // append to form
       form.append(email);
       form.append(subject);
+      form.append(attachments);
       form.append(results);
       form.append(body);
       form.append(submit);
@@ -251,9 +269,56 @@ function QAScienceException( message ) {
       findUsername(showUserMail, showUserMail);
 
       // setup binds for contact form
-      $('#js-qa-contact-subject').on('input', contactSearch);
+      if (isIE() && isIE() < 9) {
+        $('#js-qa-contact-subject').on('keyup', contactSearch);
+        $('#js-qa-contact-message').on('keyup', contactSearch);
+      } else {
+        $('#js-qa-contact-subject').on('input', contactSearch);
+        $('#js-qa-contact-message').on('input', contactSearch);
+      }
 
-      $('#js-qa-contact-message').on('input', contactSearch);
+      // setup fileupload handler for attachments
+      //
+      // This assumes jquery.ui.widget.js, jquery.iframe-transport.js and
+      // jquery.fileupload.js has been loaded before this script.
+      $('#js-qa-attachments').fileupload({
+        dataType: 'json',
+        // TODO define url here instead of in element
+        forceIframeTransport: true,
+        done: function (e, data) {
+          console.log(data);
+          var result = $('pre', data.result).text();
+          console.log(result);
+          $.each(data.result.files, function (index, file) {
+            // add file to global attachments list
+            addAttachment(file);
+            console.log(file);
+          });
+        }
+      });
+
+      // add redirect option
+      $('#js-qa-attachments').fileupload(
+          'option', 'redirect', settings.backend + 'static/attachment.html?%s'
+          );
+    }
+
+    /**
+     * Add attachment to attachment list
+     */
+    function addAttachment( file ) {
+      attachments.push(file);
+    }
+
+    /**
+     * Remove attachment from attachment list
+     */
+    function removeAttachment( uuid ) {
+      for (var i = 0; i < attachments.length; i++) {
+        if (attachments[i].uuid === uuid) {
+          attachments.slice(i, 1);
+        }
+      }
     }
 
     /**
@@ -293,7 +358,7 @@ function QAScienceException( message ) {
         var link = userLink + userId;
 
         $.ajax({
-          url: link,
+          url: link
         }).done(function (data) {
           // parse user page and get KU-username
           var html = data.trim();
@@ -364,15 +429,15 @@ function QAScienceException( message ) {
       var new_uri = uri;
 
       var replace = [
-        { orig: /\\u002f/g, new: "/" },
-        { orig: /\\u0026/g, new: "&" },
-        { orig: /\\u00252d/g, new: "-" },
-        { orig: /\\u00257d/g, new: "%7d" },
-        { orig: /\\u00257b/g, new: "%7b" }
+        { orig: /\\u002f/g, rep: "/" },
+        { orig: /\\u0026/g, rep: "&" },
+        { orig: /\\u00252d/g, rep: "-" },
+        { orig: /\\u00257d/g, rep: "%7d" },
+        { orig: /\\u00257b/g, rep: "%7b" }
       ];
 
       for (var i = 0; i < replace.length; i++) {
-        new_uri = new_uri.replace(replace[i].orig, replace[i].new);
+        new_uri = new_uri.replace(replace[i].orig, replace[i].rep);
       }
 
       return new_uri;
@@ -493,6 +558,7 @@ function QAScienceException( message ) {
         rate_elem.hide();
         rate_elem.html(rating_thanks);
         rate_elem.fadeIn();
+        // TODO fix hide when hiding whole answer div
 
         return false;
       });
@@ -501,7 +567,9 @@ function QAScienceException( message ) {
       $(self).on('click', '.js-qa-question', function (e) {
         e.preventDefault();
         if ($(this).attr('href') !== "#") {
-          history.pushState(null, null, $(this).attr('href'));
+          if (!(isIE() && isIE() < 10)) {
+            history.pushState(null, null, $(this).attr('href'));
+          }
         }
 
         // toggle show question on click
@@ -591,7 +659,7 @@ function QAScienceException( message ) {
       $.ajax({
         url: url,
         data: data,
-        dataType: 'json',
+        dataType: 'jsonp'
       }).done(function (response) {
         if (typeof type !== "udefined") {
           callback(response, type);
@@ -619,7 +687,7 @@ function QAScienceException( message ) {
         url: url,
         type: 'POST',
         data: data,
-        dataType: 'json',
+        dataType: 'json'
       }).done(function (response) {
         if (typeof callback !== "undefined") {
           callback(response);
@@ -764,7 +832,7 @@ function QAScienceException( message ) {
     }
 
     /**
-     * make categor links
+     * make category links
      * TODO sort by deeplink
      */
     function categoryLink( category, out, name ) {
@@ -779,7 +847,9 @@ function QAScienceException( message ) {
         var cats = settings.categories.slice();
         for (var x = 0; x < link.length; x++) {
           if ($.inArray(link[x], settings.categories) > -1) {
-            cats.splice(cats.indexOf(link[x], 1));
+            // use inArray since indexOf isn't supported in IE8
+            var index = $.inArray(link[x], cats);
+            cats.splice(index, 1);
           }
         }
 
@@ -831,6 +901,18 @@ function QAScienceException( message ) {
 
         res.append(res_tpl);
       }
+    }
+
+    /**
+     * isIE helper function
+     */
+    function isIE() {
+      var nav = navigator.userAgent.toLowerCase();
+      var ie_version = false;
+      if (nav.indexOf('msie') != -1) {
+        ie_version = parseInt(nav.split('msie')[1]);
+      }
+      return ie_version;
     }
   };
 })( jQuery );
