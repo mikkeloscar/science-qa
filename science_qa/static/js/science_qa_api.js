@@ -33,6 +33,8 @@ function QAScienceException( message ) {
       contactSubmitText_en: 'Send',
       contactQFound_da: 'Måske kan du finde svaret på dit spørgsmål her',
       contactQFound_en: 'You may be able to find the answer to your question here',
+      deleteAttachment_da: 'Slet vedhæftede fil',
+      deleteAttachment_en: 'Delete attachment',
       listTitle_da: 'Ofte stillede spørgsmål',
       listTitle_en: 'Frequently asked questions',
       ratingText_da: 'Hjalp dette svar?',
@@ -47,6 +49,7 @@ function QAScienceException( message ) {
       username: null,
       degree_re: /^[a-z_]+(ba|ma)$/i,
       category_re: /^[a-z]+$/,
+      sessionUUID: UUID(),
       backend: 'https://qa.moscar.net/'
     };
 
@@ -55,7 +58,7 @@ function QAScienceException( message ) {
 
     // Global attachments list, used for keeping track of attachments in the
     // contact form
-    var attachments = [];
+    var attachment_list = [];
 
     // check for API Key
     checkForAPIKey();
@@ -112,21 +115,6 @@ function QAScienceException( message ) {
         var username = data.match(settings.username_re);
         settings.username = username[0];
       }
-    }
-
-    /**
-     * Read cookie value
-     */
-    function readCookie(name) {
-      var nameEQ = name + "=";
-      var ca = document.cookie.split(';');
-      for (var i = 0; i < ca.length; i++) {
-        var c = ca[i];
-        while (c.charAt(0) == ' ') c = c.substring(1, c.length);
-        if ($.inArray(nameEQ, c) == 0)
-          return c.substring(nameEQ.length, c.length);
-      }
-      return null;
     }
 
     /**
@@ -222,12 +210,14 @@ function QAScienceException( message ) {
         var submitText = settings.contactSubmitText_en;
         var emailPlaceHolder = settings.emailPlaceHolder_en;
         var qFound = settings.contactQFound_en;
+        var delete_attachment = settings.deleteAttachment_en;
       } else {
         var titlePlaceHolder = settings.contactTitlePlaceHolder_da;
         var bodyPlaceHolder = settings.contactBodyPlaceHolder_da;
         var submitText = settings.contactSubmitText_da;
         var emailPlaceHolder = settings.emailPlaceHolder_da;
         var qFound = settings.contactQFound_da;
+        var delete_attachment = settings.deleteAttachment_da;
       }
 
       var header = $('<div class="js-qa-header">Contact</div>');
@@ -238,21 +228,22 @@ function QAScienceException( message ) {
       var subject = $('<div><input type="text" id="js-qa-contact-subject"'
                     + ' placeholder="' + titlePlaceHolder + '" /></div>');
       var attachments = $('<input id="js-qa-attachments" type="file"'
-                        + ' name="files" data-url="' + settings.backend
-                        + 'api/attachments/' + settings.api_key
-                        + '/" multiple>');
+                        + ' name="files" multiple>');
+      var files = $('<div class="js-qa-files"></div>');
       var results = $('<div class="js-qa-results-wrap">'
                     + '<div class="js-qa-results-title">' + qFound + '</div>'
                     + '<ul id="js-qa-results-contact" class="js-qa-results">'
                     + '</ul></div>');
       var body = $('<div><textarea id="js-qa-contact-message" placeholder="'
                     + bodyPlaceHolder + '" rows="7"></textarea></div>');
-      var submit = $('<button type="submit">' + submitText + '</button>');
+      var submit = $('<button id="js-qa-contact-submit" type="submit">'
+                   + submitText + '</button>');
 
       // append to form
       form.append(email);
       form.append(subject);
       form.append(attachments);
+      form.append(files);
       form.append(results);
       form.append(body);
       form.append(submit);
@@ -283,35 +274,70 @@ function QAScienceException( message ) {
       // jquery.fileupload.js has been loaded before this script.
       $('#js-qa-attachments').fileupload({
         dataType: 'json',
-        // TODO define url here instead of in element
-        forceIframeTransport: true,
+        url: settings.backend + 'api/attachments/' + settings.api_key + '/',
+        add: function (e, data) {
+          $.each(data.files, function (i, file) {
+            var attached_file = $('<div class="js-qa-file"><span>' + file.name
+              + '</span><a href="#" class="js-qa-delete-file" title="'
+              + delete_attachment + '">x</a></div>');
+            attached_file.data('filename', file.name);
+            $('.js-qa-files').append(attached_file);
+          })
+          data.context = $('.js-qa-files');
+          data.submit();
+        },
         done: function (e, data) {
-          console.log(data);
-          var result = $('pre', data.result).text();
-          console.log(result);
-          $.each(data.result.files, function (index, file) {
-            // add file to global attachments list
-            addAttachment(file);
-            console.log(file);
-          });
+          if (data.result) {
+            $.each(data.result.files, function (index, file) {
+              // add file to global attachments list
+              // addAttachment(file);
+              console.log(file);
+            });
+          } else {
+            console.log(attachment_list);
+          }
         }
       });
 
-      // add redirect option
-      $('#js-qa-attachments').fileupload(
-          'option', 'redirect', settings.backend + 'static/attachment.html?%s'
-          );
+      // add sessionUUID to formdata on fileuploadsubmit
+      // the uuid is used to identify the clients files on the server
+      $('#js-qa-attachments').bind('fileuploadsubmit', function (e, data) {
+        // pass uuid as formdata
+        data.formData = { uuid: settings.sessionUUID };
+        if (!data.formData.uuid) {
+          console.log('failed');
+          return false;
+        }
+        // if valid add filename(s) to attachment list
+        $.each(data.files, function (i, file) {
+          addAttachment(file.name);
+        });
+      });
+
+      // bind click to delete attachment
+      // TODO add confirmBox?
+      $(self).on('click', '.js-qa-file .js-qa-delete-file', function (e) {
+        var name = $(this).parent().data('filename');
+        deleteAttachmentAPI(name);
+        return false;
+      });
     }
 
     /**
      * Add attachment to attachment list
      */
-    function addAttachment( file ) {
-      attachments.push(file);
+    function addAttachment( filename ) {
+      for (var i = 0; i < attachment_list.length; i++) {
+        if (attachment_list[i] === filename) {
+          return;
+        }
+      }
+      attachment_list.push(filename);
     }
 
     /**
      * Remove attachment from attachment list
+     * TODO FIX
      */
     function removeAttachment( uuid ) {
       for (var i = 0; i < attachments.length; i++) {
@@ -753,6 +779,15 @@ function QAScienceException( message ) {
     }
 
     /**
+     * delete attachment
+     */
+    function deleteAttachmentAPI(name) {
+      var params = { name: name, uuid: settings.sessionUUID };
+
+      makeAPIRequest('delete_attachment', params, APIResponse);
+    }
+
+    /**
      * Handle API Response
      *
      * @param response, assume response to be javascript obj
@@ -773,6 +808,9 @@ function QAScienceException( message ) {
           break;
         case 'single':
           addSingleQuestion(response, '#js-qa-question');
+          break;
+        case 'delete_attachment':
+          removeAttachment(response);
           break;
         default:
           console.log(response);
@@ -904,6 +942,23 @@ function QAScienceException( message ) {
     }
 
     /**
+     * remove attachment
+     */
+    function removeAttachment( response ) {
+      if (response.success) {
+        // iterate through each file-div and remove the one that was deleted
+        $('.js-qa-files').children('.js-qa-file').each(function() {
+          var filename = $(this).data('filename');
+          if (filename === response.name) {
+            $(this).remove();
+          }
+        });
+      }
+    }
+
+    /* Helper functions */
+
+    /**
      * isIE helper function
      */
     function isIE() {
@@ -913,6 +968,40 @@ function QAScienceException( message ) {
         ie_version = parseInt(nav.split('msie')[1]);
       }
       return ie_version;
+    }
+
+    /**
+     * Create UUID
+     */
+    function UUID() {
+        // http://www.ietf.org/rfc/rfc4122.txt
+        var s = new Array(36);
+        var hexDigits = "0123456789abcdef";
+        for (var i = 0; i < 36; i++) {
+            s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1);
+        }
+        s[14] = "4";  // bits 12-15 of the time_hi_and_version field to 0010
+        // bits 6-7 of the clock_seq_hi_and_reserved to 01
+        s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1);
+        s[8] = s[13] = s[18] = s[23] = "-";
+
+        var uuid = s.join("");
+        return uuid;
+    }
+
+    /**
+     * Read cookie value
+     */
+    function readCookie(name) {
+      var nameEQ = name + "=";
+      var ca = document.cookie.split(';');
+      for (var i = 0; i < ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+        if ($.inArray(nameEQ, c) == 0)
+          return c.substring(nameEQ.length, c.length);
+      }
+      return null;
     }
   };
 })( jQuery );

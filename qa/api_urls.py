@@ -10,4 +10,6 @@ urlpatterns = patterns('',
     url(r'^rate/(?P<apikey>[a-f\d]+)/$', views.rate, name='rate'),
     url(r'^attachments/(?P<apikey>[a-f\d]+)/$', views.attachments,
         name='attachments'),
+    url(r'^delete_attachment/(?P<apikey>[a-f\d]+)/$', views.delete_attachment,
+        name='delete_attachment'),
 )

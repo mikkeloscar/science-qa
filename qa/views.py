@@ -2,6 +2,7 @@ import json
 import uuid
 import os
 import urllib
+import re
 
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotAllowed
 from django.contrib.auth.decorators import login_required, permission_required
@@ -458,34 +459,44 @@ def rate(request, apikey=None):
 def attachments(request, apikey=None):
     if valid_api_key(apikey, request):
         if request.method == 'POST':
-            response = handle_attachment(request.FILES['files'])
+            uuid = request.POST.get('uuid', None)
+            response = handle_attachment(request.FILES['files'], uuid)
         else:
             return HttpResponseNotAllowed(['POST'])
     else:
         response['error'] = 'Invalid API Key'
 
-    # if redirect is set, the request was done in an iframe (IE)
-    redirect = request.POST.get('redirect', None)
+    # serve IE the right (wrong) content_type
+    accept_header = request.META.get('HTTP_ACCEPT', '')
+    content_types = accept_header.split(', ')
 
-    if redirect:
-        query = urllib.quote_plus(json.dumps(response).replace(' ', ''))
-        page = redirect % query
-        return HttpResponseRedirect(page)
+    if 'application/json' not in content_types:
+        content_type = 'text/plain'
+    else:
+        content_type = 'application/json'
 
-    # # serve IE the right (wrong) content_type
-    # accept_header = request.META.get('HTTP_ACCEPT', '')
-    # content_types = accept_header.split(', ')
-
-    # # if 'application/json' not in content_types:
-    # content_type = 'text/plain'
-    # # else:
-    # #     content_type = 'application/json'
-
-    # print(content_type)
-
-    return HttpResponse(json.dumps(response), content_type='application/json')
+    return HttpResponse(json.dumps(response), content_type=content_type)
 
 
+@csrf_exempt
+def send_email(request, apikey=None):
+    pass
+
+
+def delete_attachment(request, apikey=None):
+    response = {'call': 'delete_attachment'}
+    if valid_api_key(apikey, request):
+        uuid = request.GET.get('uuid', None)
+        name = request.GET.get('name', None)
+        success, msg = handle_delete_attachment(name, uuid)
+        response['success'] = success
+        response['name'] = name
+        if not success:
+            response['error'] = msg
+    else:
+        response['success'] = False
+        response['error'] = 'Invalid API Key'
+    return JsonpResponse(response, request.GET.get('callback'))
 
 
 def valid_api_key(apikey, request):
@@ -508,21 +519,57 @@ def valid_api_key(apikey, request):
         else:
             return False
 
-
-def handle_attachment(f):
+# TODO refactor to other file since this is not view related
+def handle_attachment(f, uuid):
     """
     save attachment and return dict with file info
     """
-    name = [slugify(p) for p in f.name.split('.')]
-    name = '.'.join(name)
-    _uuid = str(uuid.uuid4())
-    filename = _uuid + '_' + name
-    pathname = os.path.join(settings.ATTACHMENT_ROOT, filename)
-    with open(pathname, 'wb+') as destination:
-        for chunk in f.chunks():
-            destination.write(chunk)
+    filename = generate_attachment_name(f.name, uuid)
+    if filename:
+        pathname = os.path.join(settings.ATTACHMENT_ROOT, filename)
+        with open(pathname, 'wb+') as destination:
+            for chunk in f.chunks():
+                destination.write(chunk)
 
-    return { 'files': [ { 'name': name,
-                          'uuid': _uuid,
+        response = { 'files': [ { 'name': f.name,
+                          'uuid': uuid,
                           'size': f.size,
                           'content_type': f.content_type } ] }
+    else:
+        response['error'] = 'Invalid uuid'
+
+    return response
+
+def generate_attachment_name(name, uuid):
+    """
+    Generate filename based on uuid and filename
+    """
+    filename = None
+    if uuid and name:
+        match = re.search(r'[a-f\d]{8}-([a-f\d]{4}-){3}[a-f\d]{12}', uuid)
+        if match:
+            name = [slugify(p) for p in name.split('.')]
+            name = '.'.join(name)
+            filename = uuid + '_' + name
+    return filename
+
+def handle_delete_attachment(name, uuid):
+    """
+    Delete attachment from server
+    """
+    filename = generate_attachment_name(name, uuid)
+    success = False
+    msg = ""
+    if filename:
+        pathname = os.path.join(settings.ATTACHMENT_ROOT, filename)
+        if os.path.exists(pathname):
+            try:
+                os.remove(pathname)
+                success = True
+            except OSError as e:
+                msg = str(e)
+        else:
+            msg = "File does not exist"
+    else:
+        msg = "Invaid filename"
+    return (success, msg)
