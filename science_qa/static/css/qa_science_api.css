@@ -151,3 +151,7 @@
   background: #ddd;
   color: #111;
 }
+
+.js-qa-spacer {
+  margin: 100px 0;
+}

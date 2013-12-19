@@ -202,59 +202,63 @@ function QAScienceException( message ) {
      * Sets up contact form UI
      */
     function setupContact() {
-      var superWrapper = $('<div class="js-qa" />');
-      var wrapper = $('<div class="js-qa-contact-form"></div>');
-      if (settings.locale == 'en') {
-        var titlePlaceHolder = settings.contactTitlePlaceHolder_en;
-        var bodyPlaceHolder = settings.contactBodyPlaceHolder_en;
-        var submitText = settings.contactSubmitText_en;
-        var emailPlaceHolder = settings.emailPlaceHolder_en;
-        var qFound = settings.contactQFound_en;
-        var delete_attachment = settings.deleteAttachment_en;
-      } else {
-        var titlePlaceHolder = settings.contactTitlePlaceHolder_da;
-        var bodyPlaceHolder = settings.contactBodyPlaceHolder_da;
-        var submitText = settings.contactSubmitText_da;
-        var emailPlaceHolder = settings.emailPlaceHolder_da;
-        var qFound = settings.contactQFound_da;
-        var delete_attachment = settings.deleteAttachment_da;
-      }
+      // if ($(self).is('form')) {
 
-      var header = $('<div class="js-qa-header">Contact</div>');
+      // } else {
+        var superWrapper = $('<div class="js-qa" />');
+        var wrapper = $('<div class="js-qa-contact-form"></div>');
+        if (settings.locale == 'en') {
+          var titlePlaceHolder = settings.contactTitlePlaceHolder_en;
+          var bodyPlaceHolder = settings.contactBodyPlaceHolder_en;
+          var submitText = settings.contactSubmitText_en;
+          var emailPlaceHolder = settings.emailPlaceHolder_en;
+          var qFound = settings.contactQFound_en;
+          var delete_attachment = settings.deleteAttachment_en;
+        } else {
+          var titlePlaceHolder = settings.contactTitlePlaceHolder_da;
+          var bodyPlaceHolder = settings.contactBodyPlaceHolder_da;
+          var submitText = settings.contactSubmitText_da;
+          var emailPlaceHolder = settings.emailPlaceHolder_da;
+          var qFound = settings.contactQFound_da;
+          var delete_attachment = settings.deleteAttachment_da;
+        }
 
-      var form = $('<form id="js-qa-contact-form"></form>');
-      var email = $('<div><input id="js-qa-email" type="text" placeholder="'
-                    + emailPlaceHolder + '" disabled="disabled" /></div>');
-      var subject = $('<div><input type="text" id="js-qa-contact-subject"'
-                    + ' placeholder="' + titlePlaceHolder + '" /></div>');
-      var attachments = $('<input id="js-qa-attachments" type="file"'
-                        + ' name="files" multiple>');
-      var files = $('<div class="js-qa-files"></div>');
-      var results = $('<div class="js-qa-results-wrap">'
-                    + '<div class="js-qa-results-title">' + qFound + '</div>'
-                    + '<ul id="js-qa-results-contact" class="js-qa-results">'
-                    + '</ul></div>');
-      var body = $('<div><textarea id="js-qa-contact-message" placeholder="'
-                    + bodyPlaceHolder + '" rows="7"></textarea></div>');
-      var submit = $('<button id="js-qa-contact-submit" type="submit">'
-                   + submitText + '</button>');
+        var header = $('<div class="js-qa-header">Contact</div>');
 
-      // append to form
-      form.append(email);
-      form.append(subject);
-      form.append(attachments);
-      form.append(files);
-      form.append(results);
-      form.append(body);
-      form.append(submit);
+        var form = $('<form id="js-qa-contact-form"></form>');
+        var email = $('<div><input id="js-qa-email" type="text" placeholder="'
+                      + emailPlaceHolder + '" disabled="disabled" /></div>');
+        var subject = $('<div><input type="text" id="js-qa-contact-subject"'
+                      + ' placeholder="' + titlePlaceHolder + '" /></div>');
+        var attachments = $('<input id="js-qa-attachments" type="file"'
+                          + ' name="files" multiple>');
+        var files = $('<div class="js-qa-files"></div>');
+        var results = $('<div class="js-qa-results-wrap">'
+                      + '<div class="js-qa-results-title">' + qFound + '</div>'
+                      + '<ul id="js-qa-results-contact" class="js-qa-results">'
+                      + '</ul></div>');
+        var body = $('<div><textarea id="js-qa-contact-message" placeholder="'
+                      + bodyPlaceHolder + '" rows="7"></textarea></div>');
+        var submit = $('<button id="js-qa-contact-submit" type="submit">'
+                     + submitText + '</button>');
 
-      // append form to wrapper
-      wrapper.append(header);
-      wrapper.append(form);
-      superWrapper.append(wrapper);
+        // append to form
+        form.append(email);
+        form.append(subject);
+        form.append(attachments);
+        form.append(files);
+        form.append(results);
+        form.append(body);
+        form.append(submit);
 
-      // append to page
-      $(self).append(superWrapper);
+        // append form to wrapper
+        wrapper.append(header);
+        wrapper.append(form);
+        superWrapper.append(wrapper);
+
+        // append to page
+        $(self).append(superWrapper);
+      // }
 
       // find user name and show alumni-mail for current user
       findUsername(showUserMail, showUserMail);
@@ -793,7 +797,6 @@ function QAScienceException( message ) {
      * @param response, assume response to be javascript obj
      */
     function APIResponse( response, type ) {
-      console.log(response);
 
       switch (response['call']) {
         case 'list':
@@ -959,7 +962,7 @@ function QAScienceException( message ) {
     /* Helper functions */
 
     /**
-     * isIE helper function
+     * check if clientbrowser is IE and if so, what version of IE
      */
     function isIE() {
       var nav = navigator.userAgent.toLowerCase();
@@ -991,17 +994,15 @@ function QAScienceException( message ) {
 
     /**
      * Read cookie value
+     *
+     * source: http://stackoverflow.com/questions/5639346/
+     *                shortest-function-for-reading-a-cookie-in-javascript
      */
     function readCookie(name) {
-      var nameEQ = name + "=";
-      var ca = document.cookie.split(';');
-      for (var i = 0; i < ca.length; i++) {
-        var c = ca[i];
-        while (c.charAt(0) == ' ') c = c.substring(1, c.length);
-        if ($.inArray(nameEQ, c) == 0)
-          return c.substring(nameEQ.length, c.length);
-      }
-      return null;
+        name += '=';
+        for (var ca = document.cookie.split(/;\s*/), i = ca.length - 1; i >= 0; i--)
+            if (!ca[i].indexOf(name))
+                return ca[i].replace(name, '');
     }
   };
 })( jQuery );
