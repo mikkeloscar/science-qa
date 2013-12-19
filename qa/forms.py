@@ -21,7 +21,7 @@ class QuestionForm(BootstrapForm):
         self.fields['answer_en'].widget.attrs['rows'] = 7
         self.fields['degree_all_bsc'].widget.attrs['class'] = None
         self.fields['degree_all_msc'].widget.attrs['class'] = None
-        choices = self.fields['categories'].choices
+        choices = sorted(self.fields['categories'].choices, key=lambda x: x[1])
         self.fields['categories'].widget = FilteredSelectMultiple(
                 _('categories'), False, attrs={'rows': '10'}, choices=choices)
 

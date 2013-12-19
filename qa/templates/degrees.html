@@ -49,4 +49,34 @@
 
 {% endfor %}
 </table>
+
+<ul class="pagination">
+  <li{% if not degrees.has_previous %} class="disabled"{% endif %}>
+  {% if degrees.has_previous %}
+    <a href="{{ degrees.page_link }}{{ degrees.previous_page_number }}">&laquo;</a>
+  {% else %}
+    <a href="#">&laquo;</a>
+  {% endif %}
+  </li>
+
+  {% for num in degrees.paginator.page_range %}
+    {% ifequal num degrees.number %}
+      <li class="active">
+        <a href="#">{{ num }} <span class="sr-only">(current)</span></a>
+      </li>
+    {% else %}
+      <li>
+        <a href="{{ degrees.page_link }}{{ num }}">{{ num }}</a>
+      </li>
+    {% endifequal %}
+  {% endfor %}
+
+  <li{% if not degrees.has_next %} class="disabled"{% endif %}>
+  {% if degrees.has_next %}
+  <a href="{{ degrees.page_link }}{{ degrees.next_page_number }}">&raquo;</a>
+  {% else %}
+    <a href="#">&raquo;</a>
+  {% endif %}
+  </li>
+</ul>
 {% endblock %}

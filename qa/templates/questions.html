@@ -4,6 +4,7 @@
 
 {# Fix static files #}
 {% block js %}
+<script type="text/javascript" charset="utf-8" src="/jsi18n"></script>
 <script type="text/javascript" charset="utf-8" src="{{ STATIC_URL }}js/search.js"></script>
 <script type="text/javascript" charset="utf-8" src="{{ STATIC_URL }}js/question.js"></script>
 {% endblock %}
@@ -20,62 +21,68 @@
 
 <p>
 <label for="search">{% trans "Søg" %}</label>
-<input type="text" class="form-control filter" id="search" name="question" placeholder="{% trans "Søg.." %}" />
+<input type="text" class="form-control filter" id="search" name="question" placeholder="{% trans "Søg.." %}" value="{% if q %}{{ q }}{% endif %}" />
 </p>
 <p>
 
 {# Custom filter #}
 <div class="filter-wrapper">
   <div class="head">{% trans "Filter" %}</div>
+  <span id="toggle-filter" class="glyphicon glyphicon-plus"></span>
+  <div class="filters{% if c or d %} open{% endif %}">
+    <div class="filters-wrap">
+      <div class="filter-wrap">
+        <div class="title">{% trans "Categories" %}</div>
+        <div id="categories" class="categories checkbox-list">
+        {% for category in filters.categories %}
+        <div class="checkbox">
+          <label>
+            <input name="category" type="checkbox" value="{{ category.id }}" {% if category.id in c %}checked="checked" {% endif %}/>
+            {{ category.name_ }}
+          </label>
+        </div>
+        {% endfor %}
+        </div>
+      </div>
 
-  <div class="filter-wrap">
-    <div class="title">{% trans "Categories" %}</div>
-    <div id="categories" class="categories checkbox-list">
-    {% for category in filters.categories %}
-    <div class="checkbox">
-      <label>
-        <input name="category" type="checkbox" value="{{ category.id }}" {% if category.id in c %}checked="checked" {% endif %}/>
-        {{ category.name_ }}
-      </label>
-    </div>
-    {% endfor %}
-    </div>
+      <div class="filter-wrap">
+        <div class="title">{% trans "Degrees" %}</div>
+        <div class="checkbox-list" id="degrees">
+        {% for degree in filters.degrees %}
+        <div class="checkbox">
+          <label>
+            <input name="degree" type="checkbox" value="{{ degree.id }}" {% if degree.id in d %}checked="checked" {% endif %}/>
+            {{ degree.name_da }}
+          </label>
+        </div>
+        {% endfor %}
+        </div>
+      </div>
   </div>
-
-  <div class="filter-wrap">
-    <div class="title">{% trans "Degrees" %}</div>
-    <div class="checkbox-list" id="degrees">
-    {% for degree in filters.degrees %}
-    <div class="checkbox">
-      <label>
-        <input name="degree" type="checkbox" value="{{ degree.id }}" {% if degree.id in d %}checked="checked" {% endif %}/>
-        {{ degree.name_da }}
-      </label>
+  <a href="#" class="btn btn-default" id="filter">{% trans "Use filter" %}</a>
     </div>
-    {% endfor %}
-    </div>
-  </div>
 </div>
 
-<a href="#" class="btn btn-default" id="filter">{% trans "Filter" %}</a>
 </p>
 <table class="table table-striped">
   <thead>
     <tr>
       <th>{% trans "Question" %}</th>
       {# <th>{% trans "Active" %}</th> #}
+      <th>{% trans "Rating" %}</th>
       <th>{% trans "Added" %}</th>
       <th>{% trans "Last edit" %}</th>
       <th>{% trans "Actions" %}</th>
     </tr>
   </thead>
-<tbody id="ajax-response"></tbody>
+<tbody id="ajax-questions"></tbody>
 <tbody class="static">
 {% for question in questions %}
 <tr>
   <td class="qa-row">
     {% include "question.html" with question=question c=c d=d %}
   </td>
+  <td>{{ question.rating_count }}</td>
   <td>{{ question.date_added }}</td>
   <td>{{ question.date_last_edit }}</td>
   <td>

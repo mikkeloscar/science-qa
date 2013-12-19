@@ -6,7 +6,7 @@ from django.contrib import admin
 admin.autodiscover()
 
 js_info_dict = {
-    'packages': ('django.contrib.admin',),
+    'packages': ('django.contrib.admin', 'qa'),
 }
 
 urlpatterns = patterns('',

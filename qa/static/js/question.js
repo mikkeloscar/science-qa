@@ -34,12 +34,22 @@ var QuestionForm = {
 };
 
 var QuestionIndex = {
+  filter_toggle_open: false,
 
   init: function () {
     $('#filter').on('click', QuestionIndex.filter);
 
+    if ($('.filters').hasClass('open')) {
+      QuestionIndex.filter_toggle_open = true;
+      $('#toggle-filter').removeClass('glyphicon-plus');
+      $('#toggle-filter').addClass('glyphicon-minus');
+    }
+
+    $('#toggle-filter').on('click', QuestionIndex.toggleFilter);
+    $('.filter-wrapper .head').on('click', QuestionIndex.toggleFilter);
+
     // TODO refactor
-    $('.question').on('click', function () {
+    $(document).on('click', '.question', function () {
       if ($(this).parent().hasClass('noanswer')) {
         $(this).parent().removeClass('noanswer');
       } else {
@@ -82,6 +92,20 @@ var QuestionIndex = {
     location.search = query;
 
     return false;
+  },
+
+  toggleFilter: function () {
+    if (QuestionIndex.filter_toggle_open) {
+      $('.filters').removeClass('open');
+      $('#toggle-filter').removeClass('glyphicon-minus');
+      $('#toggle-filter').addClass('glyphicon-plus');
+      QuestionIndex.filter_toggle_open = false;
+    } else {
+      $('.filters').addClass('open');
+      $('#toggle-filter').removeClass('glyphicon-plus');
+      $('#toggle-filter').addClass('glyphicon-minus');
+      QuestionIndex.filter_toggle_open = true;
+    }
   },
 
   addToQueryString: function ( queryList, type, values ) {

@@ -45,9 +45,13 @@ def index(request):
 
 @permission_required('qa.view_question')
 def questions(request):
-    q = request.GET.get('q', None)
+    query = request.GET.get('q', None)
     c = request.GET.get('c', [])
+    if len(c) > 0:
+        c = clean_list(c.split('.'))
     d = request.GET.get('d', [])
+    if len(d) > 0:
+        d = clean_list(d.split('.'))
     page = request.GET.get('p', 1)
     o = request.GET.get('o', [])
 
@@ -56,45 +60,142 @@ def questions(request):
 
     questions = Question.objects.all()
 
-    if q:
-        questions = questions.filter(question_da__icontains=q)
-        questions = questions.filter(answer_da__icontains=q)
-        questions = questions.filter(question_en__icontains=q)
-        questions = questions.filter(answer_en__icontains=q)
-    if len(c) > 0:
-        categories = clean_list(c.split('.'))
-        if len(categories) > 0:
-            questions = questions.filter(categories__in=categories)
-    if len(d) > 0:
-        degrees = clean_list(d.split('.'))
-        if len(degrees) > 0:
-            questions = questions.filter(degrees__in=degrees)
-    if len(o) > 0:
-        order = clean_order_list(o.split('.'))
-        if len(order) > 0:
-            questions = questions.order_by(*order)
+    if query and not request.is_ajax():
+        # custom search
+        q = query.split()
+        raw_query, params = searchQuestionSQL(q, limit=10, degrees=d, categories=c)
+        questions = Question.objects.raw(raw_query, params)
+    else:
+        raw_query, params = searchQuestionSQL(degrees=d,
+                categories=c)
+        questions = Question.objects.raw(raw_query, params)
+        # if len(c) > 0:
+        #     questions = questions.filter(categories__in=c)
+        # if len(d) > 0:
+        #     questions = questions.filter(degrees__in=d)
+        # if len(o) > 0:
+        #     order = clean_order_list(o.split('.'))
+        #     if len(order) > 0:
+        #         questions = questions.order_by(*order)
+
+        paginator = PageFilter(request.GET, list(questions), 10)
+
+        try:
+            questions = paginator.page(page)
+        except PageNotAnInteger:
+            questions = paginator.page(1)
+        except EmptyPage:
+            questions = paginator.page(paginator.num_pages)
 
     # check if request is ajax
-    if request.is_ajax():
+    if request.is_ajax() and query:
+        # custom search
+        q = query.split()
+        raw_query, params = searchQuestionSQL(q, limit=5, degrees=d, categories=c)
+        questions = Question.objects.raw(raw_query, params)
+
+        user = request.user
+        edit_perm = user.has_perm('qa.change_question')
+        delete_perm = user.has_perm('qa.delete_question')
+        # TODO grap category and degree from backend UI
         data = serializers.serialize("json", questions)
-        return HttpResponse(data, content_type="application/json")
+        response = { 'delete': delete_perm,
+                     'edit': edit_perm,
+                     'questions': data }
+        return HttpResponse(json.dumps(response), content_type="application/json")
 
-    paginator = PageFilter(request.GET, questions.distinct(), 20)
 
-    try:
-        questions = paginator.page(page)
-    except PageNotAnInteger:
-        questions = paginator.page(1)
-    except EmptyPage:
-        questions = paginator.page(paginator.num_pages)
-
-    filters = { 'categories': Category.objects.all(),
-                'degrees': Degree.objects.all() }
+    filters = { 'categories': sorted(Category.objects.all(),
+                                     key=lambda x: x.name_()),
+                'degrees': sorted(Degree.objects.all(),
+                                  key=lambda x: x.name_()) }
 
     return render(request, 'questions.html', { 'questions': questions,
                                                'filters': filters,
-                                               'c': categories,
-                                               'd': degrees })
+                                               'c': c,
+                                               'd': d,
+                                               'q': query })
+
+
+def searchQuestionSQL(search=None, limit=None, degrees=None, categories=None,
+        order=None):
+    raw = """SELECT `q`.`id`, `q`.`question_da`, `q`.`answer_da`,
+    `q`.`question_en`, `q`.`answer_en`, `q`.`degree_all_bsc`,
+    `q`.`degree_all_msc`, `q`.`date_added`, `q`.`date_last_edit`, """
+    in_raw = []
+    search_double = []
+    if search:
+        for term in search:
+            search_double.append("%" + term + "%")
+            search_double.append("%" + term + "%")
+            search_double.append("%" + term + "%")
+            search_double.append("%" + term + "%")
+            q = "CASE WHEN `q`.`question_da` LIKE %s THEN 1 ELSE 0 END "
+            q += "+ CASE WHEN `q`.`answer_da` LIKE %s THEN 1 ELSE 0 END "
+            q += "+ CASE WHEN `q`.`question_en` LIKE %s THEN 1 ELSE 0 END "
+            q += "+ CASE WHEN `q`.`answer_en` LIKE %s THEN 1 ELSE 0 END"
+            in_raw.append(q)
+        raw += ' + '.join(in_raw) + ' matches, '
+
+    raw += 'IFNULL(SUM(`r`.`rating`), 0) as rating_count '
+    raw += "FROM `qa_question` `q` "
+    raw += "LEFT JOIN `qa_rating` `r` ON `r`.`question_id` = `q`.`id` "
+
+    where = []
+
+    # limit to degree if defined
+    if len(degrees) > 0:
+        for degree in degrees:
+            search_double.append(degree)
+        raw += "INNER JOIN `qa_question_degrees` ON ( `q`.`id` ="
+        raw += "`qa_question_degrees`.`question_id` ) "
+        raw += "INNER JOIN `qa_degree` ON ( `qa_question_degrees`.`degree_id` "
+        raw += "= `qa_degree`.`id` ) "
+
+        where_clause = "`qa_degree`.`id` IN ("
+        where_clause += ','.join(['%s' for d in degrees]) + ")"
+        where.append(where_clause)
+
+    if len(categories) > 0:
+        for category in categories:
+            search_double.append(category)
+        raw += "INNER JOIN `qa_question_categories` ON ( `q`.`id` ="
+        raw += "`qa_question_categories`.`question_id` ) "
+        raw += "INNER JOIN `qa_category` ON ( `qa_question_categories`.`category_id` "
+        raw += "= `qa_category`.`id` ) "
+
+        where_clause = "`qa_category`.`id` IN ("
+        where_clause += ','.join(['%s' for c in categories]) + ")"
+        where.append(where_clause)
+
+    if len(where) > 0:
+        raw += "WHERE " +  ' AND '.join(where)
+    raw += "GROUP BY `q`.`id` "
+
+    if search:
+        raw += " HAVING matches > 0 ORDER BY matches DESC"
+
+    if order and not search:
+        raw += "ORDER BY "
+        order_by = []
+        for col in order:
+            dir = "DESC"
+            if col[0] == '-':
+                dir = "ASC"
+                col = col[1:]
+            order_by.append(col + " " + dir)
+        order_by = ', '.join(order_by)
+
+        raw += order_by
+
+        # ", rating_count DESC"
+
+    # limit results if limit is defined
+    if limit:
+        raw += " LIMIT %d" % limit
+
+    return (raw, search_double)
+
 
 @permission_required('qa.add_question')
 def question_add(request):
@@ -102,7 +203,6 @@ def question_add(request):
         form = QuestionForm(request.POST)
         if form.is_valid():
             form.save()
-            # TODO use django message service
             if '_addanother' in request.POST:
                 form = QuestionForm()
             else:
@@ -122,7 +222,6 @@ def question_edit(request, question_id):
         form = QuestionForm(request.POST, instance=q)
         if form.is_valid():
             form.save()
-            # TODO use django message service
             if '_addanother' in request.POST:
                 return HttpResponseRedirect(reverse('question_add'))
             else:
@@ -151,7 +250,18 @@ def question_delete(request, question_id):
 
 @permission_required('qa.view_category')
 def categories(request):
-    categories = Category.objects.all()
+    page = request.GET.get('p', 1)
+    categories = sorted(Category.objects.all(), key=lambda x: x.name_())
+
+    paginator = PageFilter(request.GET, categories, 15)
+
+    try:
+        categories = paginator.page(page)
+    except PageNotAnInteger:
+        categories = paginator.page(1)
+    except EmptyPage:
+        categories = paginator.page(paginator.num_pages)
+
     return render(request, 'categories.html', { 'categories': categories })
 
 @permission_required('qa.add_category')
@@ -160,8 +270,6 @@ def category_add(request):
         form = CategoryForm(request.POST)
         if form.is_valid():
             form.save()
-            # TODO use django message service
-            # TODO handle redirects in popup mode
             if '_addanother' in request.POST:
                 form = CategoryForm()
             else:
@@ -181,8 +289,6 @@ def category_edit(request, category_id):
         form = CategoryForm(request.POST, instance=c)
         if form.is_valid():
             form.save()
-            # TODO use django message service
-            # TODO handle redirects in popup mode
             if '_addanother' in request.POST:
                 return HttpResponseRedirect(reverse('category_add'))
             else:
@@ -211,8 +317,20 @@ def category_delete(request, category_id):
 
 @permission_required('qa.view_degree')
 def degrees(request):
-    degrees = Degree.objects.all()
+    page = request.GET.get('p', 1)
+    degrees = sorted(Degree.objects.all(), key=lambda x: x.name_())
+
+    paginator = PageFilter(request.GET, degrees, 15)
+
+    try:
+        degrees = paginator.page(page)
+    except PageNotAnInteger:
+        degrees = paginator.page(1)
+    except EmptyPage:
+        degrees = paginator.page(paginator.num_pages)
+
     return render(request, 'degrees.html', { 'degrees': degrees })
+
 
 @permission_required('qa.add_degree')
 def degree_add(request):
@@ -220,8 +338,6 @@ def degree_add(request):
         form = DegreeForm(request.POST)
         if form.is_valid():
             form.save()
-            # TODO use django message service
-            # TODO handle redirects in popup mode
             if '_addanother' in request.POST:
                 form = DegreeForm()
             else:
@@ -241,8 +357,6 @@ def degree_edit(request, degree_id):
         form = DegreeForm(request.POST, instance=d)
         if form.is_valid():
             form.save()
-            # TODO use django message service
-            # TODO handle redirects in popup mode
             if '_addanother' in request.POST:
                 return HttpResponseRedirect(reverse('degree_add'))
             else:
@@ -315,7 +429,6 @@ def search(request, apikey=None):
 
 
 def searchSQL(search, limit=None, degree=None):
-    # TODO limit to degree if defined
     raw = """SELECT `q`.`id`, `q`.`question_da`, `q`.`answer_da`,
     `q`.`question_en`, `q`.`answer_en`, `q`.`degree_all_bsc`,
     `q`.`degree_all_msc`, `q`.`date_added`, `q`.`date_last_edit`, """
@@ -326,26 +439,30 @@ def searchSQL(search, limit=None, degree=None):
         search_double.append("%" + term + "%")
         search_double.append("%" + term + "%")
         search_double.append("%" + term + "%")
-        q = "CASE WHEN `q`.`question_da` LIKE %s THEN 1 ELSE 0 END\n"
-        q += "+ CASE WHEN `q`.`answer_da` LIKE %s THEN 1 ELSE 0 END\n"
-        q += "+ CASE WHEN `q`.`question_en` LIKE %s THEN 1 ELSE 0 END\n"
+        q = "CASE WHEN `q`.`question_da` LIKE %s THEN 1 ELSE 0 END "
+        q += "+ CASE WHEN `q`.`answer_da` LIKE %s THEN 1 ELSE 0 END "
+        q += "+ CASE WHEN `q`.`question_en` LIKE %s THEN 1 ELSE 0 END "
         q += "+ CASE WHEN `q`.`answer_en` LIKE %s THEN 1 ELSE 0 END"
         in_raw.append(q)
-    raw += '\n+ '.join(in_raw) + ' matches,\n'
-    raw += 'IFNULL(SUM(`r`.`rating`), 0) as rating_count\n'
-    raw += "FROM `qa_question` `q`\n"
-    raw += "LEFT JOIN `qa_rating` `r` ON `r`.`question_id` = `q`.`id`\n"
+    raw += ' + '.join(in_raw) + ' matches, '
+    raw += 'IFNULL(SUM(`r`.`rating`), 0) as rating_count '
+    raw += "FROM `qa_question` `q` "
+    raw += "LEFT JOIN `qa_rating` `r` ON `r`.`question_id` = `q`.`id` "
+
+    # limit to degree if defined
     if degree:
         search_double.append(degree)
         search_double.append(degree)
         raw += "INNER JOIN `qa_question_degrees` ON ( `q`.`id` ="
-        raw += "`qa_question_degrees`.`question_id` )\n"
+        raw += "`qa_question_degrees`.`question_id` ) "
         raw += "INNER JOIN `qa_degree` ON ( `qa_question_degrees`.`degree_id` "
-        raw += "= `qa_degree`.`id` )\n"
+        raw += "= `qa_degree`.`id` ) "
         raw += "WHERE ( `qa_degree`.`degree_id_da` = %s OR "
-        raw += "`qa_degree`.`degree_id_en` = %s )\n"
-    raw += "GROUP BY `q`.`id`\n"
+        raw += "`qa_degree`.`degree_id_en` = %s ) "
+    raw += "GROUP BY `q`.`id` "
     raw += " HAVING matches > 0 ORDER BY matches DESC, rating_count DESC"
+
+    # limit results if limit is defined
     if limit:
         raw += " LIMIT %d" % limit
 

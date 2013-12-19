@@ -47,4 +47,34 @@
 
 {% endfor %}
 </table>
+
+<ul class="pagination">
+  <li{% if not categories.has_previous %} class="disabled"{% endif %}>
+  {% if categories.has_previous %}
+    <a href="{{ categories.page_link }}{{ categories.previous_page_number }}">&laquo;</a>
+  {% else %}
+    <a href="#">&laquo;</a>
+  {% endif %}
+  </li>
+
+  {% for num in categories.paginator.page_range %}
+    {% ifequal num categories.number %}
+      <li class="active">
+        <a href="#">{{ num }} <span class="sr-only">(current)</span></a>
+      </li>
+    {% else %}
+      <li>
+        <a href="{{ categories.page_link }}{{ num }}">{{ num }}</a>
+      </li>
+    {% endifequal %}
+  {% endfor %}
+
+  <li{% if not categories.has_next %} class="disabled"{% endif %}>
+  {% if categories.has_next %}
+  <a href="{{ categories.page_link }}{{ categories.next_page_number }}">&raquo;</a>
+  {% else %}
+    <a href="#">&raquo;</a>
+  {% endif %}
+  </li>
+</ul>
 {% endblock %}

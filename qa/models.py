@@ -24,6 +24,9 @@ class Question(models.Model):
         permissions = (("view_question", "Can view question"),)
         ordering = ['question_da', 'question_en']
 
+    def question_(self):
+        return self.question_da or self.question_en
+
     def question(self, lang):
         if lang == "en":
             return self.question_en

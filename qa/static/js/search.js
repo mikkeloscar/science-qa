@@ -1,3 +1,16 @@
+/**
+ * check if clientbrowser is IE and if so, what version of IE
+ */
+function isIE() {
+  var nav = navigator.userAgent.toLowerCase();
+  var ie_version = false;
+  if (nav.indexOf('msie') != -1) {
+    ie_version = parseInt(nav.split('msie')[1]);
+  }
+  return ie_version;
+}
+
+
 var Search = {
   url_query: null,
 
@@ -12,7 +25,7 @@ var Search = {
   /**
    * Perform a search and return and render data
    */
-  doSearch: function() {
+  doSearch: function () {
     var val = $('#search').val();
 
     if (val.length > 2) {
@@ -23,23 +36,29 @@ var Search = {
         // headers: { //'X-CSRFToken':getCookie('csrftoken'),
         //           'sessionid':getCookie('sessionid') },
       }).done(function (data) {
-        console.log(data);
-        if (data.length) {
-          $('#ajax-response').html('');
 
-          for (var i = 0; i < data.length; i++) {
-            Search.questionsResponse(data[i]);
-          }
+        var questions = JSON.parse(data.questions);
+        if (questions.length) {
+          $('#ajax-questions').html('');
+
+          $.each(questions, function (i, question) {
+            Search.questionsResponse(question, data.edit, data.delete);
+          });
         }
       });
     } else if (val.length == 0) {
       $('.static').removeClass('hide');
-      $('#ajax-response').html('');
-      history.pushState(null, 'searching', location.pathname + Search.url_query);
+      $('#ajax-questions').html('');
+      if (!isIE() || (isIE() && isIE() > 9)) {
+        history.pushState(null, 'searching', location.pathname + Search.url_query);
+      }
     }
   },
 
-  questionsResponse: function(response) {
+  questionsResponse: function ( question, edit, delete_ ) {
+
+    console.log(question, edit, delete_);
+
     // create tr
     var tr = $('<tr/>');
 
@@ -47,35 +66,60 @@ var Search = {
 
     // create question td
     var q_td = $('<td/>');
-    if (response.fields.question_da && response.fields.answer_da) {
-      var qa_da = $('<div class="question-answer"><div class="question">' +
-                    response.fields.question_da + '</div>' +
-                    '<div class="answer">' + response.fields.answer_da +
+    if (question.fields.question_da && question.fields.answer_da) {
+      var qa_da = $('<div class="question-answer noanswer">'
+                  + '<div class="question"><span class="flag dk"></span><span>'
+                  + question.fields.question_da + '</span></div>' +
+                    '<div class="answer">' + question.fields.answer_da +
                     '</div></div>');
       q_td.append(qa_da);
     }
 
-    if (response.fields.question_en && response.fields.answer_en) {
-      var qa_en = $('<div class="question-answer"><div class="question">' +
-                    response.fields.question_en + '</div>' +
-                    '<div class="answer">' + response.fields.answer_en +
+    if (question.fields.question_en && question.fields.answer_en) {
+      var qa_en = $('<div class="question-answer noanswer">'
+                  + '<div class="question"><span class="flag uk"></span>'
+                  + question.fields.question_en + '</span></div>' +
+                    '<div class="answer">' + question.fields.answer_en +
                     '</div></div>');
       q_td.append(qa_en);
     }
 
     tds.push(q_td);
 
-    var date_td = $('<td/>').html(response.fields.date_added);
+    // TODO fix rating on searches
+    var rating_td = $('<td/>').html(question.fields.rating_count);
+    tds.push(rating_td);
+
+    var date_td = $('<td/>').html(question.fields.date_added);
     tds.push(date_td);
 
-    var last_td = $('<td/>').html(response.fields.date_last_edit);
+    var last_td = $('<td/>').html(question.fields.date_last_edit);
     tds.push(last_td);
+
+    var action_td = $('<td/>');
+    if (edit) {
+      var edit = $('<a href="/qa/questions/' + question.pk + '"'
+          + ' class="btn btn-success btn-xs" role="button">'
+          + gettext('Edit') + '</a>');
+
+      action_td.append(edit);
+    }
+
+    if (delete_) {
+      var _delete = $('<a href="/qa/questions/' + question.pk + '/delete"'
+          + ' class="btn btn-danger btn-xs" role="button">'
+          + gettext('Delete') + '</a>');
+
+      action_td.append(_delete);
+    }
+
+    tds.push(action_td);
 
     for (var i = 0; i < tds.length; i++) {
       tr.append(tds[i]);
     }
 
-    $('#ajax-response').append(tr);
+    $('#ajax-questions').append(tr);
     $('.static').addClass('hide');
   }
 };
