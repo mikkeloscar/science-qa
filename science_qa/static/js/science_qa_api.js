@@ -8,6 +8,8 @@ function QAScienceException( message ) {
 
 (function ( $ ) {
 
+  jQuery.support.cors = true;
+
   // qaSearch definition
   $.fn.qaScience = function( options ) {
 
@@ -21,6 +23,7 @@ function QAScienceException( message ) {
       degree: null,
       categories: [],
       locale: null,
+      limit: 0,
       searchPlaceHolder_da: 'Søg..',
       searchPlaceHolder_en: 'Search..',
       emailPlaceHolder_da: 'Din email',
@@ -106,7 +109,7 @@ function QAScienceException( message ) {
     /**
      * try to get KU-username from cookie
      *
-     * format logondata = acc=0&lgn=bcd123
+     * format: logondata = acc=0&lgn=bcd123
      */
     function getKUUsername() {
       var data = readCookie('logondata');
@@ -118,7 +121,7 @@ function QAScienceException( message ) {
     }
 
     /**
-     * Parse page URL in degree and categories haven't been defined
+     * Parse page URL if degree and categories haven't been defined
      * programmatically
      *
      * throws "Not on kunet.dk" if the plugin has been initialized outside
@@ -178,9 +181,9 @@ function QAScienceException( message ) {
 
       // setup binds for search form
       if (isIE() && isIE() < 9) {
-        $('#js-qa-search').on('keyup', search);
+        $('#js-qa-search').on('keyup', debounce(search, 300));
       } else {
-        $('#js-qa-search').on('input', search);
+        $('#js-qa-search').on('input', debounce(search, 300));
       }
     }
 
@@ -202,9 +205,7 @@ function QAScienceException( message ) {
      * Sets up contact form UI
      */
     function setupContact() {
-      // if ($(self).is('form')) {
-
-      // } else {
+      if (!$(self).is('form')) {
         var superWrapper = $('<div class="js-qa" />');
         var wrapper = $('<div class="js-qa-contact-form"></div>');
         if (settings.locale == 'en') {
@@ -226,19 +227,22 @@ function QAScienceException( message ) {
         var header = $('<div class="js-qa-header">Contact</div>');
 
         var form = $('<form id="js-qa-contact-form"></form>');
-        var email = $('<div><input id="js-qa-email" type="text" placeholder="'
-                      + emailPlaceHolder + '" disabled="disabled" /></div>');
+        var email = $('<div><input id="js-qa-email" name="qa_email"'
+                    + ' type="text" placeholder="'
+                    + emailPlaceHolder + '" disabled="disabled" /></div>');
         var subject = $('<div><input type="text" id="js-qa-contact-subject"'
-                      + ' placeholder="' + titlePlaceHolder + '" /></div>');
+                      + ' name="qa_subject", placeholder="' + titlePlaceHolder
+                      + '" /></div>');
         var attachments = $('<input id="js-qa-attachments" type="file"'
-                          + ' name="files" multiple>');
+                          + ' name="qa_files" multiple>');
         var files = $('<div class="js-qa-files"></div>');
         var results = $('<div class="js-qa-results-wrap">'
                       + '<div class="js-qa-results-title">' + qFound + '</div>'
                       + '<ul id="js-qa-results-contact" class="js-qa-results">'
                       + '</ul></div>');
-        var body = $('<div><textarea id="js-qa-contact-message" placeholder="'
-                      + bodyPlaceHolder + '" rows="7"></textarea></div>');
+        var body = $('<div><textarea id="js-qa-contact-message"'
+                   + ' name="qa_message" placeholder="'
+                   + bodyPlaceHolder + '" rows="7"></textarea></div>');
         var submit = $('<button id="js-qa-contact-submit" type="submit">'
                      + submitText + '</button>');
 
@@ -258,18 +262,18 @@ function QAScienceException( message ) {
 
         // append to page
         $(self).append(superWrapper);
-      // }
+      }
 
       // find user name and show alumni-mail for current user
       findUsername(showUserMail, showUserMail);
 
       // setup binds for contact form
       if (isIE() && isIE() < 9) {
-        $('#js-qa-contact-subject').on('keyup', contactSearch);
-        $('#js-qa-contact-message').on('keyup', contactSearch);
+        $('#js-qa-contact-subject').on('keyup', debounce(contactSearch, 300));
+        $('#js-qa-contact-message').on('keyup', debounce(contactSearch, 300));
       } else {
-        $('#js-qa-contact-subject').on('input', contactSearch);
-        $('#js-qa-contact-message').on('input', contactSearch);
+        $('#js-qa-contact-subject').on('input', debounce(contactSearch, 300));
+        $('#js-qa-contact-message').on('input', debounce(contactSearch, 300));
       }
 
       // setup fileupload handler for attachments
@@ -295,10 +299,10 @@ function QAScienceException( message ) {
             $.each(data.result.files, function (index, file) {
               // add file to global attachments list
               // addAttachment(file);
-              console.log(file);
+              console.log("file", file);
             });
           } else {
-            console.log(attachment_list);
+            console.log("attachement", attachment_list);
           }
         }
       });
@@ -325,6 +329,102 @@ function QAScienceException( message ) {
         deleteAttachmentAPI(name);
         return false;
       });
+
+
+      // submit mailform
+      $('#js-qa-contact-form').on('submit', function (e) {
+        e.preventDefault();
+
+        var formData = $(this).serialize();
+        var fields = $(this).serializeArray();
+
+        var errors = {};
+
+        clearErrors($(this));
+
+        $.each(fields, function (i, elem) {
+          switch (elem.name) {
+            case "qa_email":
+              // Check if email is valid
+              if (!validateEmail(elem.value)) {
+                errors[elem.name] = "invalid email";
+              }
+              break;
+            case "qa_subject":
+            case "qa_message":
+              // TODO fix message
+              if (elem.value === "") {
+                errors[elem.name] = "Empty";
+              }
+              break;
+          }
+        });
+
+        if (!addErrors($(this), errors)) {
+          var extra_formData = { uuid: settings.sessionUUID };
+
+          $.each(attachment_list, function (i, file) {
+            extra_formData['files_' + i] = file;
+          });
+
+          if (settings.degree) {
+            extra_formData['degree'] = settings.degree;
+          }
+
+          if (settings.categories.length > 0) {
+            extra_formData['categories'] = settings.categories.join('-');
+          }
+
+          if (settings.locale) {
+            extra_formData['locale'] = settings.locale;
+          }
+
+          if (settings.username) {
+            extra_formData['ku_user'] = settings.username;
+          }
+
+          formData += '&' + $.param(extra_formData);
+
+          // make post to backend
+          sendEmailAPI(formData);
+        }
+      });
+    }
+
+    /**
+     * Add errros to form
+     */
+    function addErrors( form, errors ) {
+      var error = false;
+
+      for (key in errors) {
+        var name = key;
+        var value = errors[key];
+
+        var field = form
+          .find('textarea[name="' + name + '"], input[name="' + name + '"]');
+
+        field.parent()
+          .append('<span class="js-qa-fielderror">' + value + '</span>');
+
+        field.addClass('js-qa-error');
+
+        error = true;
+      }
+
+      return error;
+    }
+
+    /**
+     * clear errors from form
+     */
+    function clearErrors( form ) {
+      form.find('.js-qa-error').each(function () {
+        $(this).removeClass('js-qa-error');
+        if ($(this).next().hasClass('js-qa-fielderror')) {
+          $(this).next().remove();
+        }
+      });
     }
 
     /**
@@ -341,14 +441,15 @@ function QAScienceException( message ) {
 
     /**
      * Remove attachment from attachment list
-     * TODO FIX
+     *
+     * @param name, filename of the attachment to remove.
      */
-    function removeAttachment( uuid ) {
-      for (var i = 0; i < attachments.length; i++) {
-        if (attachments[i].uuid === uuid) {
-          attachments.slice(i, 1);
+    function removeAttachment( name ) {
+      $.each(attachment_list, function (i, filename) {
+        if (filename === name) {
+          attachment_list.splice(i, 1);
         }
-      }
+      });
     }
 
     /**
@@ -453,7 +554,7 @@ function QAScienceException( message ) {
     }
 
     /**
-     * Parse sharepoint URI and replace utf-8 chars with chars
+     * Parse sharepoint URI and replace utf-8 chars with ASCII chars
      */
     function parseURI(uri) {
       var new_uri = uri;
@@ -543,7 +644,7 @@ function QAScienceException( message ) {
     }
 
     /**
-     * Setup either search UI or contactform UI depending on settings.type
+     * Setup UI depending on settings.type
      *
      * Valid types are 'search', 'contact' and 'list'
      *
@@ -676,6 +777,10 @@ function QAScienceException( message ) {
         uri['ku_user'] = settings.username;
       }
 
+      if (settings.limit != 0 && /^\d+$/.test(settings.limit)) {
+        uri['limit'] = settings.limit;
+      }
+
       return uri;
     }
 
@@ -691,39 +796,18 @@ function QAScienceException( message ) {
         data: data,
         dataType: 'jsonp'
       }).done(function (response) {
-        if (typeof type !== "udefined") {
-          callback(response, type);
-        } else {
-          callback(response);
+        if (typeof callback !== "undefined") {
+          if (typeof type !== "udefined") {
+            callback(response, type);
+          } else {
+            callback(response);
+          }
         }
       }).fail(function (data, textStatus, errorThrown) {
         console.log("FAIL");
         console.log(data);
         console.log(textStatus);
         console.log(errorThrown);
-      });
-    }
-
-    /**
-     * make API Post Request
-     *
-     * Callback is optional
-     */
-    function makeAPIPostRequest( api_call, data, callback ) {
-      var url = settings.backend + 'api/' + api_call + '/' +
-                settings.api_key + '/';
-
-      $.ajax({
-        url: url,
-        type: 'POST',
-        data: data,
-        dataType: 'json'
-      }).done(function (response) {
-        if (typeof callback !== "undefined") {
-          callback(response);
-        }
-      }).fail( function (data) {
-        console.log(data);
       });
     }
 
@@ -742,7 +826,7 @@ function QAScienceException( message ) {
     function contactSearchAPI( search ) {
       var params = buildSearchRequestURI(search);
 
-      console.log(params);
+      console.log("contact search params", params);
 
       makeAPIRequest('search', params, APIResponse, 'contact')
     }
@@ -768,7 +852,7 @@ function QAScienceException( message ) {
                    id: id }
       }
 
-      makeAPIPostRequest('rate', params);
+      makeAPIRequest('rate', params);
     }
 
     /**
@@ -789,6 +873,13 @@ function QAScienceException( message ) {
       var params = { name: name, uuid: settings.sessionUUID };
 
       makeAPIRequest('delete_attachment', params, APIResponse);
+    }
+
+    /**
+     * Send mail
+     */
+    function sendEmailAPI(data) {
+      makeAPIRequest('send_email', data);
     }
 
     /**
@@ -813,10 +904,10 @@ function QAScienceException( message ) {
           addSingleQuestion(response, '#js-qa-question');
           break;
         case 'delete_attachment':
-          removeAttachment(response);
+          removeAttachmentElem(response);
           break;
         default:
-          console.log(response);
+          console.log("APIResponse", response);
       }
     }
 
@@ -947,13 +1038,15 @@ function QAScienceException( message ) {
     /**
      * remove attachment
      */
-    function removeAttachment( response ) {
+    function removeAttachmentElem( response ) {
       if (response.success) {
         // iterate through each file-div and remove the one that was deleted
         $('.js-qa-files').children('.js-qa-file').each(function() {
           var filename = $(this).data('filename');
           if (filename === response.name) {
             $(this).remove();
+            // remove from attachment_list
+            removeAttachment(filename);
           }
         });
       }
@@ -995,14 +1088,51 @@ function QAScienceException( message ) {
     /**
      * Read cookie value
      *
-     * source: http://stackoverflow.com/questions/5639346/
+     * Source: http://stackoverflow.com/questions/5639346/
      *                shortest-function-for-reading-a-cookie-in-javascript
      */
-    function readCookie(name) {
+    function readCookie( name ) {
         name += '=';
         for (var ca = document.cookie.split(/;\s*/), i = ca.length - 1; i >= 0; i--)
             if (!ca[i].indexOf(name))
                 return ca[i].replace(name, '');
+    }
+
+    /**
+     * Validate email
+     */
+    function validateEmail(email) {
+        var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+        return re.test(email);
+    }
+
+    /**
+     * Returns a function, that, as long as it continues to be invoked, will
+     * not be triggered. The function will be called after it stops being
+     * called for N milliseconds. If `immediate` is passed, trigger the
+     * function on the leading edge, instead of the trailing.
+     *
+     * Source: http://stackoverflow.com/questions/12538344/
+     * asynchronous-keyup-events-how-to-short-circuit-sequential
+     * -keyup-events-for-speed
+     */
+    function debounce( func, wait, immediate ) {
+        var timeout;
+        return function() {
+            var context = this, arps = arguments;
+            var later = function() {
+                timeout = null;
+                if (!immediate) {
+                    func.apply(context, arps);
+                }
+            };
+            if (immediate && !timeout) {
+                func.apply(context, arps);
+            }
+
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
     }
   };
 })( jQuery );

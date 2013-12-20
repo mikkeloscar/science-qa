@@ -36,6 +36,15 @@
           box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(102, 175, 233, 0.6);
 }
 
+.js-qa input.js-qa-error, .js-qa textarea.js-qa-error {
+  border-color: #953b39;
+}
+
+.js-qa input.js-qa-error:focus, .js-qa textarea.js-qa-error:focus {
+  -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,0.075),0 0 6px #d59392;
+          box-shadow: inset 0 1px 1px rgba(0,0,0,0.075),0 0 6px #d59392;
+}
+
 #js-qa-results-contact {
   max-height: 200px;
   overflow: auto;
@@ -125,6 +134,10 @@
 /*   height: 45px; */
 /*   background: red; */
 /* } */
+
+.js-qa-fielderror {
+  color: #b94a48;
+}
 
 .js-qa-file {
   display: inline-block;

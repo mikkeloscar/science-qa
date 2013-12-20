@@ -11,6 +11,7 @@ from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext as _
 from django.core import serializers
 from django.conf import settings
+from django.core.validators import validate_email
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.decorators.csrf import csrf_exempt
@@ -25,6 +26,7 @@ from qa.models import Question, Category, Degree, Rating
 from qa.forms import QuestionForm, CategoryForm, DegreeForm
 from qa.jsonp import JsonpResponse
 from api_key_manager.models import APIKey
+from emaillist.models import EmailReceiver
 
 def clean_list(list):
     l = []
@@ -478,6 +480,7 @@ def list_qa(request, apikey=None):
         degree = request.GET.get('degree', None)
         locale = request.GET.get('locale', 'da')
         ku_user = request.GET.get('ku_user', None)
+        limit = request.GET.get('limit', 0)
 
         q = []
         c = None
@@ -514,6 +517,9 @@ def list_qa(request, apikey=None):
                 ratings.append(vote.question_id)
             response['ratings'] = ratings
 
+        if limit != 0 and limit.isdigit():
+            q = q[:int(limit)]
+
         results = []
         for qa in q:
             results.append(qa.localeDict(locale))
@@ -547,29 +553,27 @@ def single(request, apikey=None):
 
 @csrf_exempt
 def rate(request, apikey=None):
-    if request.method == 'POST':
-        response = { 'call': 'rate' }
-        if valid_api_key(apikey, request):
-            id = request.POST.get('id', None)
-            ku_username = request.POST.get('ku_user', "none")
-            rating = int(request.POST.get('rating', 0))
+    response = { 'call': 'rate' }
+    if valid_api_key(apikey, request):
+        id = request.GET.get('id', None)
+        ku_username = request.GET.get('ku_user', "none")
+        rating = int(request.GET.get('rating', 0))
 
-            if id:
-                rating = Rating(question_id=id, ku_user=ku_username, rating=rating)
-                try:
-                    rating.save()
-                    response['success'] = True
-                except (ValidationError, IntegrityError) as e:
-                    response['error'] = str(e)
+        if id:
+            rating = Rating(question_id=id, ku_user=ku_username, rating=rating)
+            try:
+                rating.save()
+                response['success'] = True
+            except (ValidationError, IntegrityError) as e:
+                response['error'] = str(e)
 
-        else:
-            response['error'] = 'Invalid API Key'
-
-        if 'error' in response:
-            response['succcess'] = False
-        return HttpResponse(json.dumps(response), content_type='application/json')
     else:
-        return HttpResponseNotAllowed(['POST'])
+        response['error'] = 'Invalid API Key'
+
+    if 'error' in response:
+        response['succcess'] = False
+
+    return JsonpResponse(response, request.GET.get('callback'))
 
 
 @csrf_exempt
@@ -577,7 +581,7 @@ def attachments(request, apikey=None):
     if valid_api_key(apikey, request):
         if request.method == 'POST':
             uuid = request.POST.get('uuid', None)
-            response = handle_attachment(request.FILES['files'], uuid)
+            response = handle_attachment(request.FILES['qa_files'], uuid)
         else:
             return HttpResponseNotAllowed(['POST'])
     else:
@@ -597,7 +601,76 @@ def attachments(request, apikey=None):
 
 @csrf_exempt
 def send_email(request, apikey=None):
-    pass
+    if valid_api_key(apikey, request):
+        response = {'call': 'send_email'}
+
+        email = None
+        subject = None
+        message = None
+        uuid = None
+        receiver = None
+        files = []
+        other = []
+
+        # unpack GET data
+        for key, value in request.GET.iteritems():
+            if key == "qa_email":
+                email = value
+            elif key == "qa_subject":
+                subject = value
+            elif key == "qa_message":
+                message = value
+            elif key == "qa_receiver":
+                receiver = value
+            elif key == "uuid":
+                uuid = value
+            elif key == "locale":
+                pass
+            elif re.search(r'files_(\d+)', key):
+                files.append(value)
+            else:
+                if value != "":
+                    other.append((key, value))
+
+        try:
+            receiver = EmailReceiver.objects.get(receiver_id=receiver)
+        except ObjectDoesNotExist:
+            receiver = None
+
+        errors = []
+
+        request.LANGUAGE_CODE = request.POST.get('locale', 'da')
+
+        if not email_is_valid(email):
+            errors.append({'qa_email': _('Invalid mail')})
+        if not subject:
+            errors.append({'qa_subject': _('Empty subject')})
+        if not message:
+            errors.append({'qa_message': _('Empty message')})
+        if not receiver:
+            errors.append({'qa_receiver': _('Invalid receiver')})
+
+        print(errors)
+
+        if len(errors) == 0:
+            # produce email and send it
+            files = [generate_attachment_name(name,uuid) for name in files]
+            other_fields = ["%s:%s\n" % (key, val) for key, val in other]
+            email = """Form: %s
+                    To: %s
+                    Subject: %s
+
+                    Files: %s
+
+                    Other fields: %s
+
+                    %s
+                    """ % (email, receiver.email, subject, files, other_fields, message)
+            print(email)
+        else:
+            response['errors'] = errors
+
+    return JsonpResponse(response, request.GET.get('callback'))
 
 
 def delete_attachment(request, apikey=None):
@@ -690,3 +763,10 @@ def handle_delete_attachment(name, uuid):
     else:
         msg = "Invaid filename"
     return (success, msg)
+
+def email_is_valid(email):
+    try:
+        validate_email(email)
+        return True
+    except ValidationError:
+        return False

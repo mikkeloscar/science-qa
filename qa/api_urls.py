@@ -1,6 +1,6 @@
 from django.conf.urls import patterns, url
 
-from . import views
+from qa import views
 
 # api urls
 urlpatterns = patterns('',
@@ -12,4 +12,6 @@ urlpatterns = patterns('',
         name='attachments'),
     url(r'^delete_attachment/(?P<apikey>[a-f\d]+)/$', views.delete_attachment,
         name='delete_attachment'),
+    url(r'^send_email/(?P<apikey>[a-f\d]+)/$', views.send_email,
+        name='send_email'),
 )
