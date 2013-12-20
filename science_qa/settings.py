@@ -213,6 +213,7 @@ INSTALLED_APPS = (
     # apps
     'qa',
     'api_key_manager',
+    'emaillist',
 )
 
 if DEBUG:
