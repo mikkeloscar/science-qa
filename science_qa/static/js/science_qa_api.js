@@ -8,8 +8,6 @@ function QAScienceException( message ) {
 
 (function ( $ ) {
 
-  jQuery.support.cors = true;
-
   // qaSearch definition
   $.fn.qaScience = function( options ) {
 

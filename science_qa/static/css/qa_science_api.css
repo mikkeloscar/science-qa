@@ -128,12 +128,12 @@
   display: none;
 }
 
-/* #js-qa-attachments { */
-/*   display: block; */
-/*   width: 30px */
-/*   height: 45px; */
-/*   background: red; */
-/* } */
+#js-qa-attachments {
+  display: block;
+  width: 30px
+  height: 45px;
+  background: red;
+}
 
 .js-qa-fielderror {
   color: #b94a48;
