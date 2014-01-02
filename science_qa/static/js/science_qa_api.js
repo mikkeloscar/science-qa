@@ -8,7 +8,7 @@ function QAScienceException( message ) {
 
 (function ( $ ) {
 
-  // qaSearch definition
+  // qaScience definition
   $.fn.qaScience = function( options ) {
 
     var self = this;
@@ -42,6 +42,7 @@ function QAScienceException( message ) {
       ratingText_en: 'Was this answer helpful?',
       locale_id: '#ctl00_PlaceHolderGlobalNavigation_LanguageLink',
       user_menu_id: '#zz2_ID_PersonalInformation',
+      sp_link_end: '/Sider/default.aspx',
       user_sp_link_re: /\\[\\a-z\d_.=?]+/i,
       user_id_re: /^var _spUserId=\d+;$/,
       get_user_id_re: /\d+/g,
@@ -164,7 +165,7 @@ function QAScienceException( message ) {
       }
       var header = $('<div class="js-qa-header">Søg</div>');
       var input = $('<input type="text" id="js-qa-search" placeholder="'
-                    + placeHolder + '" />');
+                  + placeHolder + '" />');
       var results = $('<div id="js-qa-results-search" class="js-qa-results">'
                     + '</div>');
 
@@ -183,6 +184,13 @@ function QAScienceException( message ) {
       } else {
         $('#js-qa-search').on('input', debounce(search, 300));
       }
+
+      var $search_form = $('#js-qa-search').closest('form');
+
+      // fix form-submit on sharepoint page
+      $(document).on('submit', '#aspnetForm', function (e) {
+        e.preventDefault();
+      });
     }
 
     /**
@@ -231,8 +239,9 @@ function QAScienceException( message ) {
         var subject = $('<div><input type="text" id="js-qa-contact-subject"'
                       + ' name="qa_subject", placeholder="' + titlePlaceHolder
                       + '" /></div>');
-        var attachments = $('<input id="js-qa-attachments" type="file"'
-                          + ' name="qa_files" multiple>');
+        var attachments = $('<span class="js-qa-attachment-btn">'
+                          + '<input id="js-qa-attachments" type="file"'
+                          + ' name="qa_files" multiple></span>');
         var files = $('<div class="js-qa-files"></div>');
         var results = $('<div class="js-qa-results-wrap">'
                       + '<div class="js-qa-results-title">' + qFound + '</div>'
@@ -260,6 +269,15 @@ function QAScienceException( message ) {
 
         // append to page
         $(self).append(superWrapper);
+      } else {
+        // TODO style file-input
+        // var wrapper = $('<span class="js-qa-attachment-btn"></span>');
+        // var input = $(self).closest('#js-qa-attachments');
+        // var parent = input.parent();
+        // wrapper.append(input);
+
+        // parent.closest('#js-qa-attachments').remove();
+        // parent.append(wrapper);
       }
 
       // find user name and show alumni-mail for current user
@@ -383,7 +401,7 @@ function QAScienceException( message ) {
 
           formData += '&' + $.param(extra_formData);
 
-          // make post to backend
+          // make request to backend
           sendEmailAPI(formData);
         }
       });
@@ -824,8 +842,6 @@ function QAScienceException( message ) {
     function contactSearchAPI( search ) {
       var params = buildSearchRequestURI(search);
 
-      console.log("contact search params", params);
-
       makeAPIRequest('search', params, APIResponse, 'contact')
     }
 
@@ -984,7 +1000,8 @@ function QAScienceException( message ) {
         }
 
         if (cats.length > 0 && settings.degree != null) {
-          var href = '/' + settings.degree + '/' + link.join('/');
+          var href = '/' + settings.degree + '/' + link.join('/')
+                         + settings.sp_link_end;
 
           // create anchor
           var a = $('<a href="' + href + '">' + name + '</a>');
@@ -1068,19 +1085,19 @@ function QAScienceException( message ) {
      * Create UUID
      */
     function UUID() {
-        // http://www.ietf.org/rfc/rfc4122.txt
-        var s = new Array(36);
-        var hexDigits = "0123456789abcdef";
-        for (var i = 0; i < 36; i++) {
-            s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1);
-        }
-        s[14] = "4";  // bits 12-15 of the time_hi_and_version field to 0010
-        // bits 6-7 of the clock_seq_hi_and_reserved to 01
-        s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1);
-        s[8] = s[13] = s[18] = s[23] = "-";
+      // http://www.ietf.org/rfc/rfc4122.txt
+      var s = new Array(36);
+      var hexDigits = "0123456789abcdef";
+      for (var i = 0; i < 36; i++) {
+          s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1);
+      }
+      s[14] = "4";  // bits 12-15 of the time_hi_and_version field to 0010
+      // bits 6-7 of the clock_seq_hi_and_reserved to 01
+      s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1);
+      s[8] = s[13] = s[18] = s[23] = "-";
 
-        var uuid = s.join("");
-        return uuid;
+      var uuid = s.join("");
+      return uuid;
     }
 
     /**
@@ -1090,18 +1107,18 @@ function QAScienceException( message ) {
      *                shortest-function-for-reading-a-cookie-in-javascript
      */
     function readCookie( name ) {
-        name += '=';
-        for (var ca = document.cookie.split(/;\s*/), i = ca.length - 1; i >= 0; i--)
-            if (!ca[i].indexOf(name))
-                return ca[i].replace(name, '');
+      name += '=';
+      for (var ca = document.cookie.split(/;\s*/), i = ca.length - 1; i >= 0; i--)
+        if (!ca[i].indexOf(name))
+          return ca[i].replace(name, '');
     }
 
     /**
      * Validate email
      */
     function validateEmail(email) {
-        var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-        return re.test(email);
+      var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+      return re.test(email);
     }
 
     /**
@@ -1115,22 +1132,22 @@ function QAScienceException( message ) {
      * -keyup-events-for-speed
      */
     function debounce( func, wait, immediate ) {
-        var timeout;
-        return function() {
-            var context = this, arps = arguments;
-            var later = function() {
-                timeout = null;
-                if (!immediate) {
-                    func.apply(context, arps);
-                }
-            };
-            if (immediate && !timeout) {
-                func.apply(context, arps);
-            }
-
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
+      var timeout;
+      return function() {
+        var context = this, arps = arguments;
+        var later = function() {
+          timeout = null;
+          if (!immediate) {
+            func.apply(context, arps);
+          }
         };
+        if (immediate && !timeout) {
+          func.apply(context, arps);
+        }
+
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
     }
   };
 })( jQuery );
