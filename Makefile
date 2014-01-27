@@ -5,11 +5,11 @@ STATIC=science_qa/static_serve
 
 all: help
 
-deploy: clean deps migrate static
+deploy: clean deps migrate static locale
 
 deps:
 	# install new deps
-	$(VIRTUALENV_BIN)pip install -r deps.txt
+	$(VIRTUALENV_BIN)pip install --upgrade -r deps.txt
 
 migrate:
 	# migrate db if needed
@@ -23,6 +23,9 @@ compress:
 	# compress css/js
 	$(VIRTUALENV_BIN)python manage.py compress
 
+locale:
+	# compile translations
+	$(VIRTUALENV_BIN)django-admin.py compilemessages
 
 clean:
 	rm -rf $(STATIC)/*
@@ -36,6 +39,7 @@ help:
 	@echo "  make migrate       - Update db migrations"
 	@echo "  make static        - collec staticfiles"
 	@echo "  make compress      - compress css and js"
+	@echo "  make locale        - compile translations"
 
 .PHONY: all clean help
 .PHONY: deploy

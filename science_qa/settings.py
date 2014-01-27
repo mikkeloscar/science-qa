@@ -1,5 +1,7 @@
 # Django settings for science_qa project.
 
+from django.utils.translation import ugettext_lazy as _
+
 import os.path
 import sys
 
@@ -15,6 +17,10 @@ else:
 TEMPLATE_DEBUG = DEBUG
 
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+PROJECT_MAIN_ROOT = os.path.abspath(
+    os.path.join(os.path.dirname(__file__),
+    os.path.pardir)
+)
 
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
@@ -83,6 +89,15 @@ TIME_ZONE = 'Europe/Copenhagen'
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
 LANGUAGE_CODE = 'en-us'
+
+LANGUAGES = (
+    ('da', _('Danish')),
+    ('en', _('English')),
+)
+
+LOCALE_PATHS = (
+    os.path.join(PROJECT_MAIN_ROOT, 'locale'),
+)
 
 SITE_ID = 1
 
