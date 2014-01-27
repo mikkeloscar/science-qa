@@ -9,6 +9,10 @@ deploy: clean deps migrate static locale
 
 deps:
 	# install new deps
+	$(VIRTUALENV_BIN)pip install -r deps.txt
+
+deps-upgrade:
+	# upgrade deps
 	$(VIRTUALENV_BIN)pip install --upgrade -r deps.txt
 
 migrate:
