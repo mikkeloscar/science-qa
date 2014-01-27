@@ -47,4 +47,4 @@ help:
 
 .PHONY: all clean help
 .PHONY: deploy
-.PHONY: migrate static compress deps
+.PHONY: migrate static compress deps locale
