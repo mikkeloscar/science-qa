@@ -129,26 +129,26 @@
 }
 
 .js-qa-attachment-btn {
-  position: relative;
-  display: inline-block;
-  padding: 4px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  /* position: relative; */
+  /* display: inline-block; */
+  /* padding: 4px; */
+  /* border: 1px solid #ccc; */
+  /* border-radius: 4px; */
 }
 
 .js-qa-attachment-btn #js-qa-attachments {
-  position: absolute;
-  top: 0;
-  right: 0;
+  /* position: absolute; */
+  /* top: 0; */
+  /* right: 0; */
   /* bottom: 0; */
   /* left: 0; */
-  background: red;
-  opacity: 0;
-  font-size: 200px;
+  /* background: red; */
+  /* opacity: 0; */
+  /* font-size: 200px; */
   /* display: block; */
   /* width: 30px */
   /* height: 45px; */
-  cursor: pointer;
+  /* cursor: pointer; */
 }
 
 .js-qa-fielderror {
