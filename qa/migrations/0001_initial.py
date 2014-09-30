@@ -1,147 +1,95 @@
 # -*- coding: utf-8 -*-
-import datetime
-from south.db import db
-from south.v2 import SchemaMigration
-from django.db import models
+from __future__ import unicode_literals
+
+from django.db import models, migrations
 
 
-class Migration(SchemaMigration):
+class Migration(migrations.Migration):
 
-    def forwards(self, orm):
-        # Adding model 'Question'
-        db.create_table(u'qa_question', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('uuid', self.gf('uuidfield.fields.UUIDField')(unique=True, max_length=32, blank=True)),
-            ('question_da', self.gf('django.db.models.fields.CharField')(max_length=200, blank=True)),
-            ('answer_da', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('question_en', self.gf('django.db.models.fields.CharField')(max_length=200, blank=True)),
-            ('answer_en', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('degree_all_bsc', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('degree_all_msc', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('date_added', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
-            ('date_last_edit', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
-        ))
-        db.send_create_signal(u'qa', ['Question'])
+    dependencies = [
+    ]
 
-        # Adding M2M table for field categories on 'Question'
-        m2m_table_name = db.shorten_name(u'qa_question_categories')
-        db.create_table(m2m_table_name, (
-            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
-            ('question', models.ForeignKey(orm[u'qa.question'], null=False)),
-            ('category', models.ForeignKey(orm[u'qa.category'], null=False))
-        ))
-        db.create_unique(m2m_table_name, ['question_id', 'category_id'])
-
-        # Adding M2M table for field degrees on 'Question'
-        m2m_table_name = db.shorten_name(u'qa_question_degrees')
-        db.create_table(m2m_table_name, (
-            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
-            ('question', models.ForeignKey(orm[u'qa.question'], null=False)),
-            ('degree', models.ForeignKey(orm[u'qa.degree'], null=False))
-        ))
-        db.create_unique(m2m_table_name, ['question_id', 'degree_id'])
-
-        # Adding model 'Category'
-        db.create_table(u'qa_category', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name_da', self.gf('django.db.models.fields.CharField')(max_length=200, blank=True)),
-            ('name_en', self.gf('django.db.models.fields.CharField')(max_length=200, blank=True)),
-            ('category_id_da', self.gf('django.db.models.fields.CharField')(max_length=200)),
-            ('category_id_en', self.gf('django.db.models.fields.CharField')(max_length=200)),
-            ('date_added', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
-            ('date_last_edit', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
-        ))
-        db.send_create_signal(u'qa', ['Category'])
-
-        # Adding model 'Degree'
-        db.create_table(u'qa_degree', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name_da', self.gf('django.db.models.fields.CharField')(max_length=200, blank=True)),
-            ('name_en', self.gf('django.db.models.fields.CharField')(max_length=200, blank=True)),
-            ('degree_id_da', self.gf('django.db.models.fields.CharField')(max_length=200)),
-            ('degree_id_en', self.gf('django.db.models.fields.CharField')(max_length=200, blank=True)),
-            ('date_added', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
-            ('date_last_edit', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
-            ('level', self.gf('django.db.models.fields.CharField')(default='bsc', max_length=3)),
-        ))
-        db.send_create_signal(u'qa', ['Degree'])
-
-        # Adding model 'Rating'
-        db.create_table(u'qa_rating', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('question', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['qa.Question'])),
-            ('rating', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('ku_user', self.gf('django.db.models.fields.CharField')(max_length=6)),
-            ('date_added', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
-        ))
-        db.send_create_signal(u'qa', ['Rating'])
-
-
-    def backwards(self, orm):
-        # Deleting model 'Question'
-        db.delete_table(u'qa_question')
-
-        # Removing M2M table for field categories on 'Question'
-        db.delete_table(db.shorten_name(u'qa_question_categories'))
-
-        # Removing M2M table for field degrees on 'Question'
-        db.delete_table(db.shorten_name(u'qa_question_degrees'))
-
-        # Deleting model 'Category'
-        db.delete_table(u'qa_category')
-
-        # Deleting model 'Degree'
-        db.delete_table(u'qa_degree')
-
-        # Deleting model 'Rating'
-        db.delete_table(u'qa_rating')
-
-
-    models = {
-        u'qa.category': {
-            'Meta': {'object_name': 'Category'},
-            'category_id_da': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
-            'category_id_en': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
-            'date_added': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'date_last_edit': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name_da': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'}),
-            'name_en': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'})
-        },
-        u'qa.degree': {
-            'Meta': {'object_name': 'Degree'},
-            'date_added': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'date_last_edit': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
-            'degree_id_da': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
-            'degree_id_en': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'level': ('django.db.models.fields.CharField', [], {'default': "'bsc'", 'max_length': '3'}),
-            'name_da': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'}),
-            'name_en': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'})
-        },
-        u'qa.question': {
-            'Meta': {'object_name': 'Question'},
-            'answer_da': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'answer_en': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'categories': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cat+'", 'symmetrical': 'False', 'to': u"orm['qa.Category']"}),
-            'date_added': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'date_last_edit': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
-            'degree_all_bsc': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'degree_all_msc': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'degrees': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'degree+'", 'symmetrical': 'False', 'to': u"orm['qa.Degree']"}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'question_da': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'}),
-            'question_en': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'}),
-            'uuid': ('uuidfield.fields.UUIDField', [], {'unique': 'True', 'max_length': '32', 'blank': 'True'})
-        },
-        u'qa.rating': {
-            'Meta': {'object_name': 'Rating'},
-            'date_added': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'ku_user': ('django.db.models.fields.CharField', [], {'max_length': '6'}),
-            'question': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['qa.Question']"}),
-            'rating': ('django.db.models.fields.BooleanField', [], {'default': 'False'})
-        }
-    }
-
-    complete_apps = ['qa']
+    operations = [
+        migrations.CreateModel(
+            name='Category',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('name_da', models.CharField(max_length=200, verbose_name='Category name (da)', blank=True)),
+                ('name_en', models.CharField(max_length=200, verbose_name='Category name (en)', blank=True)),
+                ('category_id_da', models.CharField(help_text='The category ID is used to refrence category in the url @ kunet.dk', max_length=200, verbose_name='Category ID (da)', blank=True)),
+                ('category_id_en', models.CharField(help_text='The category ID is used to refrence category in the url @ kunet.dk', max_length=200, verbose_name='Category ID (en)', blank=True)),
+                ('date_added', models.DateTimeField(auto_now_add=True, verbose_name='date added')),
+                ('date_last_edit', models.DateTimeField(auto_now=True, verbose_name='last edit')),
+                ('parents', models.ManyToManyField(to='qa.Category', null=True, verbose_name='Parent categories', blank=True)),
+            ],
+            options={
+                'ordering': ['name_da', 'name_en'],
+                'verbose_name': 'category',
+                'verbose_name_plural': 'categories',
+                'permissions': (('view_category', 'Can view category'),),
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='Degree',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('name_da', models.CharField(max_length=200, verbose_name='Degree name (da)', blank=True)),
+                ('name_en', models.CharField(max_length=200, verbose_name='Degree name (en)', blank=True)),
+                ('degree_id_da', models.CharField(help_text='The degree ID is used to refrence degree in the url @ kunet.dk', max_length=200, verbose_name='Degree ID (da)')),
+                ('degree_id_en', models.CharField(help_text='The degree ID is used to refrence degree in the url @ kunet.dk', max_length=200, verbose_name='Degree ID (en)', blank=True)),
+                ('date_added', models.DateTimeField(auto_now_add=True, verbose_name='date added')),
+                ('date_last_edit', models.DateTimeField(auto_now=True, verbose_name='last edit')),
+                ('level', models.CharField(default=b'bsc', max_length=3, choices=[(b'bsc', b'Bsc'), (b'msc', b'Msc')])),
+            ],
+            options={
+                'ordering': ['name_da', 'name_en'],
+                'verbose_name': 'degree',
+                'verbose_name_plural': 'degrees',
+                'permissions': (('view_degree', 'Can view degree'),),
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='Question',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('question_da', models.CharField(max_length=200, verbose_name='question da', blank=True)),
+                ('answer_da', models.TextField(verbose_name='answer da', blank=True)),
+                ('question_en', models.CharField(max_length=200, verbose_name='question en', blank=True)),
+                ('answer_en', models.TextField(verbose_name='answer en', blank=True)),
+                ('degree_all_bsc', models.BooleanField(default=False, verbose_name='All Bsc degrees')),
+                ('degree_all_msc', models.BooleanField(default=False, verbose_name='All Msc degrees')),
+                ('date_added', models.DateTimeField(auto_now_add=True, verbose_name='date added')),
+                ('date_last_edit', models.DateTimeField(auto_now=True, verbose_name='last edit')),
+                ('categories', models.ManyToManyField(related_name=b'questions', verbose_name='Categories', to='qa.Category')),
+                ('degrees', models.ManyToManyField(related_name=b'questions', verbose_name='Degrees', to='qa.Degree')),
+            ],
+            options={
+                'ordering': ['question_da', 'question_en'],
+                'verbose_name': 'question',
+                'verbose_name_plural': 'questions',
+                'permissions': (('view_question', 'Can view question'),),
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='Rating',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('rating', models.IntegerField(verbose_name='rating')),
+                ('ku_user', models.CharField(max_length=6, verbose_name='KU user')),
+                ('date_added', models.DateTimeField(auto_now_add=True, verbose_name='date added')),
+                ('question', models.ForeignKey(verbose_name='question', to='qa.Question')),
+            ],
+            options={
+                'verbose_name': 'rating',
+                'verbose_name_plural': 'ratings',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.AlterUniqueTogether(
+            name='rating',
+            unique_together=set([('question', 'ku_user')]),
+        ),
+    ]
