@@ -30,6 +30,7 @@ class QuestionForm(BootstrapForm):
 
     class Meta:
         model = Question
+        exclude = []
 
     def clean_answer_da(self):
         question = self.cleaned_data['question_da']
@@ -70,6 +71,7 @@ class CategoryForm(BootstrapForm):
 
     class Meta:
         model = Category
+        exclude = []
 
     def clean(self):
         cleaned_data = super(CategoryForm, self).clean()
@@ -87,3 +89,4 @@ class DegreeForm(CategoryForm):
 
     class Meta:
         model = Degree
+        exclude = []

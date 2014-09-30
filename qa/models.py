@@ -12,8 +12,8 @@ class Question(models.Model):
             verbose_name=_('Categories'))
     degrees = models.ManyToManyField('Degree', related_name="questions",
             verbose_name=_('Degrees'))
-    degree_all_bsc = models.BooleanField(_('All Bsc degrees'))
-    degree_all_msc = models.BooleanField(_('All Msc degrees'))
+    degree_all_bsc = models.BooleanField(_('All Bsc degrees'), default=False)
+    degree_all_msc = models.BooleanField(_('All Msc degrees'), default=False)
     date_added = models.DateTimeField(_('date added'), auto_now_add=True)
     date_last_edit = models.DateTimeField(_('last edit'), auto_now=True)
 

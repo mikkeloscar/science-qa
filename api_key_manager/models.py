@@ -9,10 +9,10 @@ from uuidfield import UUIDField
 class APIKey(models.Model):
     key = UUIDField(auto=True, verbose_name=_('API key'))
     domain = models.CharField(_('domain'), max_length=200)
-    active = models.BooleanField(_('active'))
+    active = models.BooleanField(_('active'), default=False)
     date_added = models.DateTimeField(_('date added'), auto_now_add=True)
     date_expire = models.DateTimeField(_('expire date'), blank=True, null=True)
-    never_expire = models.BooleanField(_('never expire'))
+    never_expire = models.BooleanField(_('never expire'), default=False)
 
     class Meta:
         verbose_name = _('API key')
